@@ -1,42 +1,99 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ConsoleLimbus
 {
-    class Character
+    abstract class Character
     {
         protected string name;
-        protected int hp;
+        private int maxHP;
+        protected int currentHp;
+        
         protected int mentality;
         protected int stagger;
         protected int speed;
         protected int level;
-        protected SkillManager skillSlot = new SkillManager();
+        protected SkillManager characterSkill = new SkillManager();
 
-        public int Hp => hp;
+        public int Mentality => mentality;
+        public int CurrentHp => currentHp;
+        public string Name => name;
+        public SkillManager CharacterSkill => characterSkill;
+        public Character(string _name,int _maxHp, int _level)
+        {
+            name = _name;
+            maxHP = _maxHp + (_level * 2);  //1레벨 hp + level * hp상승량
+            currentHp = maxHP; //초기 hp량
+            mentality = 0; //초기 0
+        }
         public void TakeDamage(int damage)
         {
-            hp = Math.Max(0, hp - damage); //체력이 0이하로 떨어지지않게
+            currentHp = Math.Max(0, currentHp - damage); //체력이 0이하로 떨어지지않게
+            Console.WriteLine($"{Name}가 {damage}데미지 받음! 남은 hp:{currentHp}");
+        }
+        public void Healing(int amount)
+        {
+            int sumHpValue = currentHp + amount;
+            currentHp = (sumHpValue > maxHP) ? maxHP : sumHpValue; //MaxHp보다 더한값이 크다면 max값 적용
+            Console.WriteLine($"{Name}가 {amount}힐 받음! 남은 hp:{currentHp}");
+        }
+
+        public void SetPlayerSkills(SkillManager sm)
+        {
+            characterSkill = sm;
         }
     }
     class Enemy : Character
     {
-
+        public Enemy(string _name, int _maxHp, int _level) : base(_name, _maxHp, _level)
+        {
+        }
     }
     class Player : Character
     {
-
+        public Player(string _name, int _maxHp, int _level) : base(_name, _maxHp, _level)
+        {
+        }
     }
 
     class BattleSystem
     {
-        public void UseSkill(Character character1, Character character2, SkillInfo skill )
+        Random rnd = new Random();
+        public void UseSkill(Character character1, Character targetCharacter, SkillInfo skill )
         {
-            //플레이어1가 플레이어2한테 스킬 값만큼 힐을주거나, 데미지를 줌
-            //character1.hp; //접근불가.. protected
+            //플레이어1가 target플레이어한테 스킬 값만큼 힐을주거나, 데미지를 줌 (target에 자기자신줘서 자신데미지, 자신힐도 가능)
+            Console.WriteLine($"{character1.Name}");
+
+            int mental = character1.Mentality; //정신력 -45~ 45까지
+            //정신력이 0이라면? 50퍼 , 정신력이 -45라면? 5퍼, 정신력이 45라면 95퍼센트 확률로 
+            int percent = 50 + character1.Mentality;// 5, 95
+
+
+
+            //코인 앞뒤면 체크
+            int coinFrontCount = 1; //코인 앞면 나온 횟수,  1부터 시작, 1개증가할때마다 N배가됨
+            for (int i = 0; i < skill.coinCount; i++)
+            {
+                if (rnd.Next(0, 100) < percent) coinFrontCount++; 
+            }
+            int amount = skill.power * coinFrontCount; //coinFrontCount가 0일떄 어떻게하지?
+            switch (skill.eCurSkillDamageType)
+            {
+                case eSkillDamageType.Damage:
+                    //데미지 =  기본값 * 코인 앞면 나온횟수
+                    //skill.coinCount; //코인 횟수만큼 random하기, 랜덤횟수얻음
+                    //skill.power; //기본 데미지값
+                    targetCharacter.TakeDamage(amount);
+                    break;
+                case eSkillDamageType.Heal:
+                    targetCharacter.Healing(amount);
+                    break;
+            }
+
         }
     }
 
@@ -44,11 +101,14 @@ namespace ConsoleLimbus
     {
         SkillOne, SkillTwo, SkillThree
     }
+    enum eSkillDamageType
+    {
+        Damage, Heal
+    }
     class SkillManager
     {
         List<SkillInfo> basicSkillList = new List<SkillInfo>(); //스킬6개중에서 랜덤으로 1개씩 빠짐.(추가/삭제가 빈번하다) -> LinkedList
-        Dictionary<eSkillType, SkillInfo> skillDic = new Dictionary<eSkillType, SkillInfo>();
-        Dictionary<eSkillType, int> skillCount = new Dictionary<eSkillType, int>();
+        Dictionary<eSkillType, SkillInfo> skillDic = new Dictionary<eSkillType, SkillInfo>(); //스킬타입과 스킬에 대한 정보
         SkillInfo[] skillSlots = new SkillInfo[2]; //스킬슬롯 2개
         Random rnd = new Random();
 
@@ -66,11 +126,10 @@ namespace ConsoleLimbus
             if (skillSlots[useSkillIndex] == null)
             {
                 Console.WriteLine("스킬이 없어요. 로직이 뭔가 잘못됨."); 
+                return null;
             }
 
             //선택한 스킬 사용
-            //??? 어떻게 쓰지? return으로 정보 넘겨주면되나
-            int arrayIndex = useSkillIndex - 1;
             SkillInfo skillBuf = skillSlots[useSkillIndex];
             skillSlots[useSkillIndex] = null;
             
@@ -78,7 +137,7 @@ namespace ConsoleLimbus
 
             return skillBuf;
         }
-        public void SetSkillSlot()
+        private void SetSkillSlot() //자동으로 채울것이기때문에 private
         {
             //스킬슬롯은 2개가 있고, 초기에는 6개의 스킬중 2개를 랜덤으로 뽑아서 슬롯2개에 넣는다.
             //스킬1개를 사용했다면 남은 스킬중에서 1개를 랜덤으로 뽑는다.
@@ -94,6 +153,8 @@ namespace ConsoleLimbus
                     //  - 어려움2: 이유) 랜덤int값이 나왔을때 특정enum을 가중치에 따라 선택하고 value값 --; (value값이 0인지도 확인해야함)
 
                     //1. 리스트로 (삭제가 느리지만 최대6개니까 그냥 사용하기로함)
+                    if (basicSkillList.Count == 0) SetBasicSkill(); //다시 채움
+
                     int skillRemain = basicSkillList.Count; //남은 스킬 갯수
                     int rndNumber = rnd.Next(0, skillRemain); //배열은 0~5 가 6개이므로 max에 +1안해도됨
                     var k = basicSkillList[rndNumber];
@@ -109,9 +170,8 @@ namespace ConsoleLimbus
             {
                 skillDic.Add(skills[i].eCurSkillType, skills[i]);
             }
-            //스킬1, 스킬2, 스킬3이 몇개씩 들어가 있어야하는지 정보 설정
-            SetBasicSkill();
-
+            SetBasicSkill(); //스킬1, 스킬2, 스킬3이 몇개씩 들어가 있어야하는지 정보 설정
+            SetSkillSlot(); //스킬슬롯 2개 
         }
         public void SetBasicSkill()
         {
@@ -149,6 +209,7 @@ namespace ConsoleLimbus
         int power { get; }
         int coinCount { get; }
         eSkillType eCurSkillType { get; }
+        eSkillDamageType eCurSkillDamageType { get; }
         int skillCount { get; }
     }
     abstract class SkillParent : SkillInfo
@@ -156,20 +217,23 @@ namespace ConsoleLimbus
         public string skillName { get; }
         public int power { get; }
         public int coinCount { get; }
-        public virtual eSkillType eCurSkillType { get { return eSkillType.SkillOne; } }
-        public virtual int skillCount { get { return 3; } }
-        public SkillParent(string _skillName, int _power, int _coinCount)
+        public eSkillDamageType eCurSkillDamageType { get; }
+        public abstract eSkillType eCurSkillType { get; }
+        public abstract int skillCount { get; }
+        public SkillParent(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType)
         {
             skillName = _skillName;
             power = _power;
             coinCount = _coinCount;
+            eCurSkillDamageType = _eSkillDamageType;
         }
     }
     class SkillOne : SkillParent
     {
         public override eSkillType eCurSkillType { get { return eSkillType.SkillOne; } }
         public override int skillCount { get { return 3; } }
-        public SkillOne(string _skillName, int _power, int _coinCount) : base(_skillName, _power, _coinCount)
+        public SkillOne(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType) 
+            : base(_skillName, _power, _coinCount,_eSkillDamageType)
         {
         }
     }
@@ -177,13 +241,15 @@ namespace ConsoleLimbus
     {
         public override eSkillType eCurSkillType { get { return eSkillType.SkillTwo; } }
         public override int skillCount { get { return 2; } }
-        public SkillTwo(string _skillName, int _power, int _coinCount) : base(_skillName, _power, _coinCount) { }
+        public SkillTwo(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType) 
+            : base(_skillName, _power, _coinCount, _eSkillDamageType) { }
     }
     class SkillThree : SkillParent
     {
         public override eSkillType eCurSkillType { get { return eSkillType.SkillThree; } }
         public override int skillCount { get { return 1; } }
-        public SkillThree(string _skillName, int _power, int _coinCount) : base(_skillName, _power, _coinCount) { }
+        public SkillThree(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType) 
+            : base(_skillName, _power, _coinCount, _eSkillDamageType) { }
     }
 
     class Program
@@ -232,17 +298,24 @@ namespace ConsoleLimbus
         }
         static void Main(string[] args)
         {
-            SkillParent skillParent1 = new SkillOne("얕은베기", 5, 2);
-            SkillParent skillParent2 = new SkillTwo("횡베기", 7, 2);
-            SkillParent skillParent3 = new SkillThree("약점간파", 9, 3);
+
+            SkillParent skillParent1 = new SkillOne("얕은베기", 5, 2,eSkillDamageType.Damage);
+            SkillParent skillParent2 = new SkillTwo("명상", 7, 2,eSkillDamageType.Heal);
+            SkillParent skillParent3 = new SkillThree("약점간파", 9, 3,eSkillDamageType.Damage);
             SkillInfo[] skills = new SkillInfo[3];
             skills[0] = skillParent1;
             skills[1] = skillParent2;
             skills[2] = skillParent3;
             SkillManager sm = new SkillManager();
             sm.SetSkill(skills);
-            sm.SetSkillSlot();
             var k = sm.GetSkill(1); //k를 얻어왔으니 k를 쓰면됨
+            BattleSystem battle = new BattleSystem(); 
+            Character player1 = new Player("히스클리프", 100, 5);
+            Character enemy1 = new Enemy("마히스", 30, 10);
+            player1.SetPlayerSkills(sm);
+
+            var k2 = player1.CharacterSkill.GetSkill(1); //플레이어 입력으로 스킬슬롯1이나 스킬슬롯2를 Console.ReadLine()으로 선택
+            battle.UseSkill(player1, enemy1, k2);
             //sm.SetBasicSkill();
         }
     }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConsoleLimbus
+namespace ConsoleLimbus2
 {
     class Gacha
     {
@@ -45,9 +45,13 @@ namespace ConsoleLimbus
             return (eEquipment)array.GetValue(randomNum);
         }
 
-        public void DoGacha(int count)
+        public List<Item> DoGacha(int count)
         {
+            List<Item> items = new List<Item>();
+            //팩토리 패턴 만들어볼까? -> 등급과 아이템 타입이 주어지면 해당 값을 넣는 거
+
             //count가 뽑기 횟수
+            Console.WriteLine("======뽑기 시작!======");
             for(int i=0; i< count; i++)
             {
                 eEquipment eRandomEquipType = GetRandomEquipType();
@@ -75,12 +79,37 @@ namespace ConsoleLimbus
                 }
                 Console.WriteLine($"{eRandomGrade}등급의 {eRandomEquipType}를 얻었습니다!!");
                 Console.ResetColor();
+
+                //인벤토리에 저장시키기
+                Item itemBuf = MakeItem(eRandomEquipType, eRandomGrade);
+                items.Add(itemBuf);
             }
-            
-
-
+            Console.WriteLine("======뽑기 종료!======");
+            return items;
+        }
+        public Item MakeItem(eEquipment equipmentType, eItemGrade eItemGrade)
+        {
+            Item item;
+            switch(equipmentType)
+            {
+                case eEquipment.Weapon:
+                    item = new WeaponItem();
+                    break;
+                case eEquipment.Armor:
+                    item = new ArmorItem();
+                    break;
+                case eEquipment.Accessory:
+                    item = new AccessoryItem();
+                    break;
+                default:
+                    item = null;
+                    break;
+            }
+            return item;
         }
     }
+
+    
     enum eItemGrade
     {
         C,B,A,S,SS
@@ -91,7 +120,7 @@ namespace ConsoleLimbus
     }
     abstract class Item
     {
-        eItemGrade eGradeType; //아이템 등급
+        public eItemGrade eGradeType; //아이템 등급
         int value; //효과. 아이템별로 다름
 
         public abstract eEquipment eEquipType { get; }
@@ -108,9 +137,52 @@ namespace ConsoleLimbus
     {
         public override eEquipment eEquipType { get; } = eEquipment.Accessory; //장비타입
     }
+    struct StructTypeKey
+    {
+        eEquipment eEquipment;
+        eItemGrade eItemGrade;
+        public StructTypeKey(eEquipment equipment, eItemGrade itemGrade)
+        {
+            eEquipment = equipment;
+            eItemGrade = itemGrade;
+        }
+    }
+    interface InterfaceTypeKey
+    {
+        eEquipment eEquipment { get; set; }
+        eItemGrade eItemGrade { get; set; }
+    }
+    abstract class ClassTypeKey
+    {
+        eEquipment eEquipment;
+        eItemGrade eItemGrade;
+
+        public ClassTypeKey(eEquipment equipment, eItemGrade itemGrade)
+        {
+            eEquipment = equipment;
+            eItemGrade = itemGrade;
+        }
+    }
+
     class Inventory
     {
         List<Item> items = new List<Item>();
+        Dictionary<Item, int> itemsDic = new Dictionary<Item, int>();
+        Dictionary<StructTypeKey, int> itemDicStruct = new Dictionary<StructTypeKey, int>();
+
+        public void AddItems(List<Item> itemList)  //해당메서드 제너릭으로 만들어보기
+        {
+            for(int i=0; i< itemList.Count; i++)
+            {
+                items.Add(itemList[i]);
+
+                //▼테스트용
+                Item itembuf = itemList[i];
+                itemsDic[itembuf] += 1; //딕셔너리 테스트용
+                StructTypeKey structTypeKey = new StructTypeKey(eEquipment.Armor,eItemGrade.A);
+                //ClassTypeKey cls = new ClassTypeKey();
+            }
+        }
     }
     class CharacterEquipment
     {

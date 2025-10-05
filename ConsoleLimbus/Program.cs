@@ -317,6 +317,18 @@ namespace ConsoleLimbus
             var k2 = player1.CharacterSkill.GetSkill(1); //플레이어 입력으로 스킬슬롯1이나 스킬슬롯2를 Console.ReadLine()으로 선택
             battle.UseSkill(player1, enemy1, k2);
             //sm.SetBasicSkill();
+
+
+            //고쳐야할것. 
+            //(완료)가챠 구조 확인 및 인벤토리에 가챠 어떻게 넣을것인지,
+            //(완료)팩토리 패턴 쓸것인지?, 팩토리패턴에서 생성자 추가
+            //가챠하고나서 등급 , 등급별 효과 어떻게 넣을 것인지.
+            //Print할때 등급별로 정렬되서 Print되도록 하기
+            Gacha gacha = new Gacha();
+            List<Item> gachaItem = gacha.DoGacha(100);
+            Inventory inventory = new Inventory();
+            inventory.AddItems(gachaItem);
+            inventory.PrintInventory();
         }
     }
 }

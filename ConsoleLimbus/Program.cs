@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConsoleLimbus
 {
@@ -12,7 +8,7 @@ namespace ConsoleLimbus
         protected string name;
         private int maxHP;
         protected int currentHp;
-        
+
         protected int mentality;
         protected int stagger;
         protected int speed;
@@ -23,7 +19,7 @@ namespace ConsoleLimbus
         public int CurrentHp => currentHp;
         public string Name => name;
         public SkillManager CharacterSkill => characterSkill;
-        public Character(string _name,int _maxHp, int _level)
+        public Character(string _name, int _maxHp, int _level)
         {
             name = _name;
             maxHP = _maxHp + (_level * 2);  //1레벨 hp + level * hp상승량
@@ -63,7 +59,7 @@ namespace ConsoleLimbus
     class BattleSystem
     {
         Random rnd = new Random();
-        public void UseSkill(Character character1, Character targetCharacter, SkillInfo skill )
+        public void UseSkill(Character character1, Character targetCharacter, SkillInfo skill)
         {
             //플레이어1가 target플레이어한테 스킬 값만큼 힐을주거나, 데미지를 줌 (target에 자기자신줘서 자신데미지, 자신힐도 가능)
             Console.WriteLine($"{character1.Name}");
@@ -78,7 +74,7 @@ namespace ConsoleLimbus
             int coinFrontCount = 1; //코인 앞면 나온 횟수,  1부터 시작, 1개증가할때마다 N배가됨
             for (int i = 0; i < skill.coinCount; i++)
             {
-                if (rnd.Next(0, 100) < percent) coinFrontCount++; 
+                if (rnd.Next(0, 100) < percent) coinFrontCount++;
             }
             int amount = skill.power * coinFrontCount; //coinFrontCount가 0일떄 어떻게하지?
             switch (skill.eCurSkillDamageType)
@@ -117,7 +113,7 @@ namespace ConsoleLimbus
             int useSkillIndex = inputSkillIndex - 1; //실제 배열에서 쓰는 index로 변경
             //useSkillIndex 로 들어오는값 => 1,2,  0 1 기준으로
             //예외처리
-            if(useSkillIndex < 0 || useSkillIndex >= skillSlots.Length)
+            if (useSkillIndex < 0 || useSkillIndex >= skillSlots.Length)
             {
                 Console.WriteLine("에러. 스킬선택은 1이나 2여야합니다");
                 return null;
@@ -125,14 +121,14 @@ namespace ConsoleLimbus
             //스킬 슬롯에 있는 스킬 사용
             if (skillSlots[useSkillIndex] == null)
             {
-                Console.WriteLine("스킬이 없어요. 로직이 뭔가 잘못됨."); 
+                Console.WriteLine("스킬이 없어요. 로직이 뭔가 잘못됨.");
                 return null;
             }
 
             //선택한 스킬 사용
             SkillInfo skillBuf = skillSlots[useSkillIndex];
             skillSlots[useSkillIndex] = null;
-            
+
             SetSkillSlot(); //사용하고 바로 다시 Skill Set
 
             return skillBuf;
@@ -142,7 +138,7 @@ namespace ConsoleLimbus
             //스킬슬롯은 2개가 있고, 초기에는 6개의 스킬중 2개를 랜덤으로 뽑아서 슬롯2개에 넣는다.
             //스킬1개를 사용했다면 남은 스킬중에서 1개를 랜덤으로 뽑는다.
             //6개를 모두 다 사용했다면? 다시 SetBasicSkill로 스킬6개를 채운다
-            for(int i=0; i< skillSlots.Length; i++)
+            for (int i = 0; i < skillSlots.Length; i++)
             {
                 if (skillSlots[i] == null) //null이면 추가 (사용해서 null이거나 초기null이면)
                 {
@@ -194,9 +190,9 @@ namespace ConsoleLimbus
                 basicSkillList.Add(skill_3);
             }
             */
-            foreach(var item in skillDic.Values) //skillDic에 저장되어있는 스킬갯수만큼
+            foreach (var item in skillDic.Values) //skillDic에 저장되어있는 스킬갯수만큼
             {
-                for(int i=0; i<item.skillCount; i++)
+                for (int i = 0; i < item.skillCount; i++)
                 {
                     basicSkillList.Add(item); //실제 스킬List에 추가
                 }
@@ -232,8 +228,8 @@ namespace ConsoleLimbus
     {
         public override eSkillType eCurSkillType { get { return eSkillType.SkillOne; } }
         public override int skillCount { get { return 3; } }
-        public SkillOne(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType) 
-            : base(_skillName, _power, _coinCount,_eSkillDamageType)
+        public SkillOne(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType)
+            : base(_skillName, _power, _coinCount, _eSkillDamageType)
         {
         }
     }
@@ -241,14 +237,14 @@ namespace ConsoleLimbus
     {
         public override eSkillType eCurSkillType { get { return eSkillType.SkillTwo; } }
         public override int skillCount { get { return 2; } }
-        public SkillTwo(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType) 
+        public SkillTwo(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType)
             : base(_skillName, _power, _coinCount, _eSkillDamageType) { }
     }
     class SkillThree : SkillParent
     {
         public override eSkillType eCurSkillType { get { return eSkillType.SkillThree; } }
         public override int skillCount { get { return 1; } }
-        public SkillThree(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType) 
+        public SkillThree(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType)
             : base(_skillName, _power, _coinCount, _eSkillDamageType) { }
     }
 
@@ -299,9 +295,9 @@ namespace ConsoleLimbus
         static void Main(string[] args)
         {
             //##스킬 시스템
-            SkillParent skillParent1 = new SkillOne("얕은베기", 5, 2,eSkillDamageType.Damage);
-            SkillParent skillParent2 = new SkillTwo("명상", 7, 2,eSkillDamageType.Heal);
-            SkillParent skillParent3 = new SkillThree("약점간파", 9, 3,eSkillDamageType.Damage);
+            SkillParent skillParent1 = new SkillOne("얕은베기", 5, 2, eSkillDamageType.Damage);
+            SkillParent skillParent2 = new SkillTwo("명상", 7, 2, eSkillDamageType.Heal);
+            SkillParent skillParent3 = new SkillThree("약점간파", 9, 3, eSkillDamageType.Damage);
             SkillInfo[] skills = new SkillInfo[3];
             skills[0] = skillParent1;
             skills[1] = skillParent2;
@@ -309,7 +305,7 @@ namespace ConsoleLimbus
             SkillManager sm = new SkillManager();
             sm.SetSkill(skills);
             var k = sm.GetSkill(1); //k를 얻어왔으니 k를 쓰면됨
-            BattleSystem battle = new BattleSystem(); 
+            BattleSystem battle = new BattleSystem();
             Character player1 = new Player("히스클리프", 100, 5);
             Character enemy1 = new Enemy("마히스", 30, 10);
             player1.SetPlayerSkills(sm);
@@ -332,7 +328,95 @@ namespace ConsoleLimbus
 
             //## 장비 시스템
             //인벤토리에서 뽑은 아이템을 장착.
+            //(완료)List하나 추가.인벤토리에 현재 아이템이 없고 아이템 갯수만 가지고있어서 문제
+            //(완료)등급과 장비타입이 뽑혔을때 해당하는 등급과타입인 아이템 배열에서 또 랜덤하게 선택.
+            //가챠클래스에서 InitGachaItem()를 Json데이터를 읽어오는 방법 고려해보기.. 코드가 너무 김
+            //가챠클래스 PrintInventory()에서 아이템 이름을 못가져옴. 이름도 가져오고 등급,장비타입,장비이름별로 정렬하고 갯수 표시하는 방법 찾기
+            Equipment equipment = new Equipment();
+            equipment.SetEquipmentDic(inventory.GetItem(0));
+            equipment.SetEquipmentDic(inventory.GetItem(2));
+            equipment.SetEquipmentDic(inventory.GetItem(4));
+
+            equipment.PrintEquipment();
+
+            //##상점 시스템
+            //그냥 가챠에서 뽑지말고 상점에서 구매할수 있도록
+
+            //SetCursor(); //선택지 선택
 
         }
+        public static void SetCursor()
+        {
+            Console.Clear();
+            int x = 20;
+            int y = 5;
+            Console.SetCursorPosition(x, y);
+            Console.Write("▶");
+
+            while(true)
+            {
+                ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                Console.SetCursorPosition(x, y);
+                Console.Write(" ");
+
+                switch(keyInfo.Key)
+                {
+                    case ConsoleKey.LeftArrow:
+                        x -= 20;
+                        break;
+                    case ConsoleKey.RightArrow:
+                        x += 20;
+                        break;
+                    case ConsoleKey.UpArrow:
+                        y -= 1;
+                        break;
+                    case ConsoleKey.DownArrow:
+                        y += 1;
+                        break;
+                    case ConsoleKey.Enter:
+                        Console.SetCursorPosition(0, 10);
+                        Console.WriteLine($"선택위치: x:{x},y:{y}");
+                        break;
+                }
+                if (x < 0) x = 0;
+                else if (x >= Console.BufferWidth) x = Console.BufferWidth - 1;
+                if (y < 0) y = 0;
+                else if (y >= Console.BufferHeight) y = Console.BufferHeight - 1;
+                Console.SetCursorPosition(x, y);
+                Console.Write("▶");
+            }
+
+            /*
+            if (x - 1 > 0) x -= 1;
+            Console.Write(" ");
+
+            ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
+            keyInfo = Console.ReadKey();
+            switch (keyInfo.Key)
+            {
+                case ConsoleKey.LeftArrow:
+                    //Console.SetCursorPosition(x - 1, y);
+                    //x -= 1;
+                    x -= 20;
+                    break;
+                case ConsoleKey.RightArrow:
+                    //x += 1;
+                    x += 20;
+                    break;
+                case ConsoleKey.UpArrow:
+                    y -= 1;
+                    break;
+                case ConsoleKey.DownArrow:
+                    y += 1;
+                    break;
+            }
+            //x축이 120이라면? 양옆 30씩 빼서 60이라고 침
+            //20,40,60 위치에 하나씩 둠
+           
+            Console.SetCursorPosition(x, y);
+            Console.Write("▶");
+            */
+        }
     }
+
 }

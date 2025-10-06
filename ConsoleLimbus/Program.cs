@@ -298,7 +298,7 @@ namespace ConsoleLimbus
         }
         static void Main(string[] args)
         {
-
+            //##스킬 시스템
             SkillParent skillParent1 = new SkillOne("얕은베기", 5, 2,eSkillDamageType.Damage);
             SkillParent skillParent2 = new SkillTwo("명상", 7, 2,eSkillDamageType.Heal);
             SkillParent skillParent3 = new SkillThree("약점간파", 9, 3,eSkillDamageType.Damage);
@@ -319,16 +319,20 @@ namespace ConsoleLimbus
             //sm.SetBasicSkill();
 
 
-            //고쳐야할것. 
+            //##가챠 + 인벤토리 시스템
             //(완료)가챠 구조 확인 및 인벤토리에 가챠 어떻게 넣을것인지,
             //(완료)팩토리 패턴 쓸것인지?, 팩토리패턴에서 생성자 추가
-            //가챠하고나서 등급 , 등급별 효과 어떻게 넣을 것인지.
-            //Print할때 등급별로 정렬되서 Print되도록 하기
+            //(완료)가챠하고나서 등급 , 등급별 색상 뽑기에 콘솔로 출력
+            //(완료)Print할때 등급별로 정렬되서 Print되도록 하기
             Gacha gacha = new Gacha();
             List<Item> gachaItem = gacha.DoGacha(100);
             Inventory inventory = new Inventory();
             inventory.AddItems(gachaItem);
             inventory.PrintInventory();
+
+            //## 장비 시스템
+            //인벤토리에서 뽑은 아이템을 장착.
+
         }
     }
 }

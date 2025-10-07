@@ -324,7 +324,8 @@ namespace ConsoleLimbus
             List<Item> gachaItem = gacha.DoGacha(100);
             Inventory inventory = new Inventory();
             inventory.AddItems(gachaItem);
-            inventory.PrintInventory();
+            //inventory.PrintInventory(); //해당메서드 삭제 예정
+            inventory.PrintInventoryBuf();
 
             //## 장비 시스템
             //인벤토리에서 뽑은 아이템을 장착.
@@ -338,12 +339,12 @@ namespace ConsoleLimbus
             equipment.SetEquipmentDic(inventory.GetItem(4));
 
             equipment.PrintEquipment();
+            
 
             //##상점 시스템
             //그냥 가챠에서 뽑지말고 상점에서 구매할수 있도록
 
             //SetCursor(); //선택지 선택
-
         }
         public static void SetCursor()
         {

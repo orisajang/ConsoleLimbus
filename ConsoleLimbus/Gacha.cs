@@ -24,10 +24,10 @@ namespace ConsoleLimbus
         }
         public void InitGachaItem()
         {
-            //수동적으로 Grade와 장비Type을 선택해서 추가
+            //같은 등급,장비 타입이어도 다른 장비를 가질 수 있으므로 장비종류 추가(가챠 아이템)
             //개선 필요할듯.. 수동으로 값 입력하는건 장비 커스텀 설정상 어쩔수없을거같긴한데 찾아봐야함
             //Init에서 Weapon이나 Armor가 하나라도 없으면 에러발생(좋은 에러인듯 터지는게 맞음)
-            //Json데이터를 읽어오기?
+            //Json데이터를 읽어올 수 있게? 처리하는 방법도 있다고함
             InitGachaHelper(eItemGrade.C, eItemType.Weapon, "녹슨검", 1);
             InitGachaHelper(eItemGrade.C, eItemType.Weapon, "나무검", 1);
             InitGachaHelper(eItemGrade.C, eItemType.Armor, "녹슨갑옷", 1);
@@ -119,16 +119,16 @@ namespace ConsoleLimbus
                 cumulative += kvp.Value;
                 if (randomValue < cumulative) return kvp.Key;
             }
-            return dic.Keys.First();
+            return dic.Keys.First(); //예외처리. 여기까지 가면 에러인것 
         }
-        public static T GetRandom<T>() where T : Enum
+        public static T GetRandom<T>() where T : Enum   //Enum전용 랜덤사용할 수 있도록 추가
         {
             var item = Enum.GetValues(typeof(T));
             return (T)item.GetValue(rnd.Next(item.Length));
         }
     }
 
-    class ItemFactory
+    class ItemFactory   //팩토리 패턴 이용해서 Item클래스가 여기서만 생성될 수 있게함(써보니까 편하다)
     {
         public Item Create(eItemType itemType, eItemGrade itemGrade, string name, int value)
         {
@@ -186,7 +186,7 @@ namespace ConsoleLimbus
     class Inventory
     {
         //Dictionary<Item, int> inventoryDic = new Dictionary<Item, int>();
-        //딕셔너리에 튜플넣어서 해보세요
+        //딕셔너리에 튜플넣어서 해본다면?
         Dictionary<(eItemGrade, eItemType), int> inventoryDic = new Dictionary<(eItemGrade, eItemType), int>();
         List<Item> itemList = new List<Item>();
 
@@ -240,6 +240,29 @@ namespace ConsoleLimbus
                 Console.WriteLine($"아이템등급:{kv.Key.Item1} 아이템타입:{kv.Key.Item2} 갯수: {kv.Value}");
             }
         }
-
+        public void PrintInventoryBuf()
+        {
+            //item목록을 전부 출력하는 메서드. 등급,타입별로 출력하도록 설정
+            Dictionary<(eItemGrade, eItemType, string), int> dic = new Dictionary<(eItemGrade, eItemType, string), int>();
+            //▼OrderBy의 람다식으로 리스트 정렬
+            var sorted = itemList.OrderBy(i => i.itemGrade)
+                .ThenBy(i => i.itemType)
+                .ThenBy(i => i.name)
+                .ToList();
+            //▼딕셔너리에 생성
+            foreach (var item in sorted)
+            {
+                if(!dic.ContainsKey((item.itemGrade, item.itemType, item.name)))
+                {
+                    dic[(item.itemGrade, item.itemType, item.name)] = 0;
+                }
+                dic[(item.itemGrade, item.itemType, item.name)]++;
+            }
+            //▼출력
+            foreach(var item in dic)
+            {
+                Console.WriteLine($"등급:{item.Key.Item1} 타입:{item.Key.Item2} 이름:{item.Key.Item3} 갯수{item.Value}");
+            }
+        }
     }
 }

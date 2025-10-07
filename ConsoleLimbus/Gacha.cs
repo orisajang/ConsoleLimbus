@@ -28,6 +28,23 @@ namespace ConsoleLimbus
             //개선 필요할듯.. 수동으로 값 입력하는건 장비 커스텀 설정상 어쩔수없을거같긴한데 찾아봐야함
             //Init에서 Weapon이나 Armor가 하나라도 없으면 에러발생(좋은 에러인듯 터지는게 맞음)
             //Json데이터를 읽어올 수 있게? 처리하는 방법도 있다고함
+            //25.10.07 ~ itemDatabase에서 얻어오도록 수정할것임
+
+            //itemPools를
+            var k = ItemDatabase.Instance.itemAllInfoDic;//에 있는 내용을 itemPools 형식의 dictionary로 만들자
+            foreach(var item in k)
+            {
+                eItemGrade itemGrade = item.Value.itemGrade;
+                eItemType itemType = item.Value.itemType;
+
+                if (!itemPools.ContainsKey((itemGrade,itemType)))
+                {
+                    itemPools[(itemGrade, itemType)] = new List<Item>();
+                }
+                itemPools[(itemGrade, itemType)].Add(item.Value);
+            }
+
+            /*
             InitGachaHelper(eItemGrade.C, eItemType.Weapon, "녹슨검", 1);
             InitGachaHelper(eItemGrade.C, eItemType.Weapon, "나무검", 1);
             InitGachaHelper(eItemGrade.C, eItemType.Armor, "녹슨갑옷", 1);
@@ -52,6 +69,7 @@ namespace ConsoleLimbus
             InitGachaHelper(eItemGrade.SS, eItemType.Weapon, "무한의대검", 6);
             InitGachaHelper(eItemGrade.SS, eItemType.Armor, "가시갑옷", 6);
             InitGachaHelper(eItemGrade.SS, eItemType.Accessory, "무효화반지", 6);
+            */
         }
 
         public void InitGachaHelper(eItemGrade itemGrade, eItemType itemType, string name, int value) 
@@ -224,11 +242,7 @@ namespace ConsoleLimbus
             foreach(var kv in items)
             {
                 var key = (kv.itemGrade, kv.itemType);
-
-                //if (inventoryDic.ContainsKey(key)) //코드 변경해서init에서 무조건 키값 다 추가해서 ContainsKey필요없음.
-                {
-                    inventoryDic[key]++; //전체 갯수가 몇개인지 확인하기 위한 딕셔너리
-                }
+                inventoryDic[key]++; //전체 갯수가 몇개인지 확인하기 위한 딕셔너리
                 itemList.Add(kv); //상세 아이템을 가지고 있기 위한 리스트
             }
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 
 namespace ConsoleLimbus
 {
@@ -13,6 +14,7 @@ namespace ConsoleLimbus
         protected int stagger;
         protected int speed;
         protected int level;
+        protected int money;
         protected SkillManager characterSkill = new SkillManager();
 
         public int Mentality => mentality;
@@ -51,8 +53,24 @@ namespace ConsoleLimbus
     }
     class Player : Character
     {
+        public int Money { get { return money; } }
+        Inventory inventory = new Inventory();
         public Player(string _name, int _maxHp, int _level) : base(_name, _maxHp, _level)
         {
+            money = 10000; //초기 돈
+        }
+        public void SetMoney(int value)
+        {
+            money += value;
+        }
+
+        public void AddInventoryItem(Item _item)
+        {
+            ItemFactory itemFactory = new ItemFactory();
+            Item itemBuf = itemFactory.Create(_item.itemType, _item.itemGrade, _item.name, _item.value);
+            List<Item> itemListBuf = new List<Item>();
+            itemListBuf.Add(itemBuf);
+            inventory.AddItems(itemListBuf);
         }
     }
 
@@ -319,7 +337,7 @@ namespace ConsoleLimbus
             //(완료)가챠 구조 확인 및 인벤토리에 가챠 어떻게 넣을것인지,
             //(완료)팩토리 패턴 쓸것인지?, 팩토리패턴에서 생성자 추가
             //(완료)가챠하고나서 등급 , 등급별 색상 뽑기에 콘솔로 출력
-            //(완료)Print할때 등급별로 정렬되서 Print되도록 하기
+            //(완료2)Print할때 등급별로 정렬되서 Print되도록 하기 + 이름 추가해서
             Gacha gacha = new Gacha();
             List<Item> gachaItem = gacha.DoGacha(100);
             Inventory inventory = new Inventory();
@@ -332,20 +350,34 @@ namespace ConsoleLimbus
             //(완료)List하나 추가.인벤토리에 현재 아이템이 없고 아이템 갯수만 가지고있어서 문제
             //(완료)등급과 장비타입이 뽑혔을때 해당하는 등급과타입인 아이템 배열에서 또 랜덤하게 선택.
             //가챠클래스에서 InitGachaItem()를 Json데이터를 읽어오는 방법 고려해보기.. 코드가 너무 김
-            //가챠클래스 PrintInventory()에서 아이템 이름을 못가져옴. 이름도 가져오고 등급,장비타입,장비이름별로 정렬하고 갯수 표시하는 방법 찾기
             Equipment equipment = new Equipment();
             equipment.SetEquipmentDic(inventory.GetItem(0));
             equipment.SetEquipmentDic(inventory.GetItem(2));
             equipment.SetEquipmentDic(inventory.GetItem(4));
 
             equipment.PrintEquipment();
-            
+
 
             //##상점 시스템
             //그냥 가챠에서 뽑지말고 상점에서 구매할수 있도록
+            //(완료)데이터베이스 클래스 만들어서 아이템 정보를 담기(싱글톤으로)
+            //(완료)데이터베이스 클래스에서 상점에서 팔 아이템 골라서 넣기
+            //구매,판매 기능 넣기
+            Shop shop = new Shop();
+            if(player1 is Player)
+            {
+                shop.BuyItem(player1 as Player, "녹슨갑옷");
+            }
+            
+
+
 
             //SetCursor(); //선택지 선택
+
         }
+
+        
+
         public static void SetCursor()
         {
             Console.Clear();

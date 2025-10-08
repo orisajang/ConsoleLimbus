@@ -122,15 +122,25 @@ namespace ConsoleLimbus
                 {
                     player.DeleteInventoryItem(itemBuf.item);
                     player.SetMoney(itemBuf.price / 2); //반값만큼 돈 증가
+                    Console.WriteLine("판매 완료!");
                 }
             }
             else
             {
                 //안가지고있으면 price 가격으로 판매
                 Item itemByPlayer = player.GetInventoryItem(itemName); //플레이어에게서 아이템 있는지 확인
-                int salesAmount = GetItemPrice(itemByPlayer.itemGrade); //상점에 없는 아이템의 경우 등급에 맞게 돈 증가
-                player.DeleteInventoryItem(itemByPlayer);
-                player.SetMoney(salesAmount); //돈 증가
+                if(itemByPlayer != null)
+                {
+                    int salesAmount = GetItemPrice(itemByPlayer.itemGrade); //상점에 없는 아이템의 경우 등급에 맞게 돈 증가
+                    player.DeleteInventoryItem(itemByPlayer);
+                    player.SetMoney(salesAmount); //돈 증가
+                    Console.WriteLine("판매 완료!");
+                }
+                else
+                {
+                    Console.WriteLine("해당 장비를 가지고있지 않습니다. 다시 확인해주세요");
+                }
+                
             }
         }
         

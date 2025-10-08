@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -44,33 +45,6 @@ namespace ConsoleLimbus
                 }
                 itemPools[(itemGrade, itemType)].Add(item.Value);
             }
-
-            /*
-            InitGachaHelper(eItemGrade.C, eItemType.Weapon, "녹슨검", 1);
-            InitGachaHelper(eItemGrade.C, eItemType.Weapon, "나무검", 1);
-            InitGachaHelper(eItemGrade.C, eItemType.Armor, "녹슨갑옷", 1);
-            InitGachaHelper(eItemGrade.C, eItemType.Armor, "나무갑옷", 1);
-            InitGachaHelper(eItemGrade.C, eItemType.Accessory, "낡은반지", 1);
-            InitGachaHelper(eItemGrade.C, eItemType.Accessory, "낡은목걸이", 1);
-            InitGachaHelper(eItemGrade.B, eItemType.Weapon, "무딘철검", 3);
-            InitGachaHelper(eItemGrade.B, eItemType.Weapon, "동검", 2);
-            InitGachaHelper(eItemGrade.B, eItemType.Armor, "낡은갑옷", 2);
-            InitGachaHelper(eItemGrade.B, eItemType.Armor, "두꺼운나무갑옷", 2);
-            InitGachaHelper(eItemGrade.B, eItemType.Accessory, "동반지", 2);
-            InitGachaHelper(eItemGrade.B, eItemType.Accessory, "낡은은반지", 3);
-            InitGachaHelper(eItemGrade.A, eItemType.Weapon, "철검", 4);
-            InitGachaHelper(eItemGrade.A, eItemType.Armor, "철갑옷", 4);
-            InitGachaHelper(eItemGrade.A, eItemType.Accessory, "철반지", 4);
-            InitGachaHelper(eItemGrade.S, eItemType.Weapon, "수호자의검", 5);
-            InitGachaHelper(eItemGrade.S, eItemType.Weapon, "공격자의검", 5);
-            InitGachaHelper(eItemGrade.S, eItemType.Armor, "수호자의갑옷", 5);
-            InitGachaHelper(eItemGrade.S, eItemType.Armor, "공격자의갑옷", 5);
-            InitGachaHelper(eItemGrade.S, eItemType.Accessory, "수호자의반지", 5);
-            InitGachaHelper(eItemGrade.SS, eItemType.Weapon, "삼위일체", 6);
-            InitGachaHelper(eItemGrade.SS, eItemType.Weapon, "무한의대검", 6);
-            InitGachaHelper(eItemGrade.SS, eItemType.Armor, "가시갑옷", 6);
-            InitGachaHelper(eItemGrade.SS, eItemType.Accessory, "무효화반지", 6);
-            */
         }
 
         public void InitGachaHelper(eItemGrade itemGrade, eItemType itemType, string name, int value) 
@@ -127,11 +101,7 @@ namespace ConsoleLimbus
         }
         public void PrintGachaItem(Item _item)
         {
-            if (_item.itemGrade == eItemGrade.C) Console.ForegroundColor = ConsoleColor.White;
-            else if (_item.itemGrade == eItemGrade.B) Console.ForegroundColor = ConsoleColor.Blue;
-            else if (_item.itemGrade == eItemGrade.A) Console.ForegroundColor = ConsoleColor.Magenta;
-            else if (_item.itemGrade == eItemGrade.S) Console.ForegroundColor = ConsoleColor.Red;
-            else if (_item.itemGrade == eItemGrade.SS) Console.ForegroundColor = ConsoleColor.Yellow;
+            Utill.SetConsoleColor(_item.itemGrade); //등급에 따른 콘솔 색상 변경
             Console.WriteLine($"{_item.itemGrade}등급의 {_item.itemType}인 {_item.name}을 뽑았습니다!!");
             Console.ResetColor();
         } 
@@ -154,6 +124,8 @@ namespace ConsoleLimbus
             return (T)item.GetValue(rnd.Next(item.Length));
         }
     }
+
+    
 
     class ItemFactory   //팩토리 패턴 이용해서 Item클래스가 여기서만 생성될 수 있게함(써보니까 편하다)
     {
@@ -230,6 +202,7 @@ namespace ConsoleLimbus
         //딕셔너리에 튜플넣어서 해본다면?
         Dictionary<(eItemGrade, eItemType), int> inventoryDic = new Dictionary<(eItemGrade, eItemType), int>();
         List<Item> itemList = new List<Item>();
+
         ItemFactory itemFactory = new ItemFactory();
         public Inventory()
         {
@@ -330,7 +303,9 @@ namespace ConsoleLimbus
             int index = 1;
             foreach(var item in dic)
             {
+                Utill.SetConsoleColor(item.Key.Item1); //등급에 따른 콘솔 색상 변경
                 Console.WriteLine($"{index}. 등급:{item.Key.Item1} 타입:{item.Key.Item2} 이름:{item.Key.Item3} 갯수{item.Value}");
+                Console.ResetColor();
                 index++; //아이템 갯수
             }
         }

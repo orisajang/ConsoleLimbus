@@ -18,12 +18,14 @@ namespace ConsoleLimbus
         protected int level;
         protected int money;
         protected SkillManager characterSkill = new SkillManager();
+        protected Equipment equipment = new Equipment(); //모든 캐릭터는 장비를 가지고있음
 
         public int Mentality => mentality;
         public int CurrentHp => currentHp;
         public int MaxHp => maxHP;
         public string Name => name;
         public int Level => level;
+        public Equipment Equip { get { return equipment; } }
         public SkillManager CharacterSkill => characterSkill;
         public Character(string _name, int _maxHp, int _level)
         {
@@ -52,6 +54,20 @@ namespace ConsoleLimbus
         {
             characterSkill = sm;
         }
+
+        public void SetLevel(int value)
+        {
+            level += value;
+            if (level < 0) level = 0;
+        }
+        public void SetMaxHP(Item item) //장신구가 바뀌었을때 최대HP 갱신을 위해서 사용
+        {
+            Item itemAccessory = equipment.GetEquipment(eItemType.Accessory);
+            maxHP -= itemAccessory.value;
+            maxHP += item.value;
+            if (maxHP < 0) maxHP = 1;
+            if (maxHP < currentHp) currentHp = maxHP;
+        } 
     }
     class Enemy : Character
     {
@@ -63,9 +79,6 @@ namespace ConsoleLimbus
     {
         public int Money { get { return money; } }
         Inventory inventory = new Inventory();
-        Equipment equipment = new Equipment();
-
-        public Equipment Equipment { get { return equipment; } }
 
         public Player(string _name, int _maxHp, int _level) : base(_name, _maxHp, _level)
         {

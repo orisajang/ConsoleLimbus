@@ -34,13 +34,19 @@ namespace ConsoleLimbus
         }
         public void PrintEquipment() //현재 가지고있는 장비 출력
         {
+            Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("======플레이어 장착 장비======");
+            Console.ResetColor();
             var k = Enum.GetValues(typeof(eItemType));
             foreach(eItemType item in k)
             {
                 Item itemBuf = equipmentDic[item];
                 Console.WriteLine($"{itemBuf.itemType}은 {itemBuf.itemGrade} 등급 {itemBuf.name}를 장착중입니다");
             }
+        }
+        public Item GetEquipment(eItemType itemType) //장착장비가 뭔지 반환
+        {
+            return equipmentDic[itemType]; 
         }
     }
 }

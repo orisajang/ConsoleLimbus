@@ -17,8 +17,6 @@ namespace ConsoleLimbus
             //정신력이 0이라면? 50퍼 , 정신력이 -45라면? 5퍼, 정신력이 45라면 95퍼센트 확률로 
             int percent = 50 + character1.Mentality;// 5, 95
 
-
-
             //코인 앞뒤면 체크
             int coinFrontCount = 1; //코인 앞면 나온 횟수,  1부터 시작, 1개증가할때마다 N배가됨
             for (int i = 0; i < skill.coinCount; i++)
@@ -50,7 +48,7 @@ namespace ConsoleLimbus
             }
             return amount; //위력을 출력해서 서로 합을 칠수 있게 설정
         }
-        public int GetSkillPower(Character character1, Character targetCharacter, SkillInfo skill)
+        public int GetSkillPower(Character character1, SkillInfo skill)
         {
             //스킬 위력을 얻어오는 메서드 (스킬위력을 서로 비교해서 플레이어와 적중에 누가 공격할지 정함
 
@@ -65,7 +63,8 @@ namespace ConsoleLimbus
             {
                 if (rnd.Next(0, 100) < percent) coinFrontCount++;
             }
-            int amount = skill.power * coinFrontCount;
+            Item weaponItem = character1.Equip.GetEquipment(eItemType.Weapon);
+            int amount = (skill.power * coinFrontCount) + weaponItem.value;
             //코인 앞뒤면 정보와 위력 출력
             Console.Write($"{character1.Name}: 코인: ");
             for (int i = 0; i < skill.coinCount; i++)
@@ -81,7 +80,10 @@ namespace ConsoleLimbus
             switch (skill.eCurSkillDamageType)
             {
                 case eSkillDamageType.Damage:
-                    //데미지 =  기본값 * 코인 앞면 나온횟수
+                    //데미지 =  (기본값 * 코인 앞면 나온횟수) - 방어력
+                    Item itemArmor = targetCharacter.Equip.GetEquipment(eItemType.Armor);
+                    amount -= itemArmor.value;      //방어구값을 이용하여 데미지 감소
+                    if (amount < 0) amount = 0;     //데미지가 0미만이면 0으로 설정
                     targetCharacter.TakeDamage(amount);
                     break;
                 case eSkillDamageType.Heal:
@@ -92,51 +94,9 @@ namespace ConsoleLimbus
     }
     class Program
     {
-        static void BattleWindow()
-        {
-            Console.WriteLine("                                             \r\n                                             \r\n   .................                         \r\n   .+%%%*%%%%%%%##-.                         \r\n   .*%%%%%%%%%%#%%-.                         \r\n   .#%%%%%%#===#%%=.                         \r\n*#%*%%%%%%#++==*%%+.                         \r\n+++=%%%%**++==+*#*+.                         \r\n-==+#%%%**%*==*++*+.                         \r\n--=%%%%%%%%#%%%=-::.                         \r\n.:#%%%%%%%%%%%%#*+=.                         \r\n:-#%%%%%%%%%%%%%*==.                         \r\n.*%%%%%%%%%%%%%%%#*=:::=-                    \r\n=#%%%%%#*%%%%%%%%%%%%%#+=                    \r\n.-##%%%==+#%%%%%%%%%%%%%#                    \r\n..+#%%%#%%%%%%%%%%%%%%%%%#*==:               \r\n...=#**%#%%%%%%+.++*#%%%%%%%%%#*-::...       \r\n    .--*%%%+%%%*===-:::+#%%%%%%%%%#*=.       \r\n    -+*#%%*:%#%#.        -##%%%%%%%%%*       \r\n    ::*%%#=.#%%#:           -+++%%%%%*       \r\n    .:##%*..####:               =====-       \r\n    .*%%#* .*%%#.                            \r\n    =###%: :#%%#-                            \r\n    *###=   =%%%%#%%%#.                      \r\n   .%%%%=   =%%%%%%%%%.                      \r\n   .#%%%=...=##%%%%#%*.                      \r\n**+--+*****++====-=++*.                      ");
-            Console.SetWindowSize(120, 50);   // 가로 120, 세로 50
-            Console.SetBufferSize(120, 50);   // 버퍼도 똑같이
-            string[] asciiArt = new string[]
-        {
-            "        @@@@%@@@    ",
-"    @@@@@@@%@@@@    ",
-"   @%@@%@%@@@%@@    ",
-"  @@@%%%%@@%%@@@@   ",
-"  @@%%+#@@@@@@@@@@@ ",
-"  @@@#*#%@@@@@@@@@@@",
-"  @@@%#%%@@@@@%@@@@@",
-"  %%@@%@%@@@@%@@@@@ ",
-"  @%@@@%%%@@@@@@@@  ",
-" @@@@@@%@%@@*@@%@@  ",
-" @%%=#+**%@%.@@@@@  ",
-" #++%%@@%-@%.@%@@@  ",
-" :+#@@%@%-%%.@%%@@  ",
-".*+@@%@@%*@@.@%%@   ",
-".%:%%@  @@+%.%%@    ",
-" :@@@@  @@%%  %%    ",
-" @@@@@  @@@@  %%    ",
-" @@@@    @@@  %     "
-        };
-
-            int leftX = 0;   // 왼쪽 캐릭터 시작 X좌표
-            int rightX = 70; // 오른쪽 캐릭터 시작 X좌표
-
-
-            // 오른쪽 출력
-            for (int i = 0; i < asciiArt.Length; i++)
-            {
-                Console.SetCursorPosition(rightX, i);
-                Console.Write(asciiArt[i]);
-            }
-
-            Console.SetCursorPosition(0, asciiArt.Length + 2);
-            Console.WriteLine("왼쪽 VS 오른쪽 전투 화면!");
-
-        }
-
         static void ShowMainWindow(Player player)
         {
+            
             Console.WriteLine("===================================================");
             Console.WriteLine("안녕하세요 당신의 이름을 입력해주세요!!");
             player.SetName(Console.ReadLine());
@@ -144,10 +104,6 @@ namespace ConsoleLimbus
             Console.WriteLine("===================================================");
             while(true)
             {
-                int width = Console.BufferWidth;
-                int height = Console.BufferHeight;
-
-
                 Console.Clear();
                 Console.WriteLine("===================================================");
                 Console.WriteLine($"환영합니다 {player.Name}님");
@@ -195,12 +151,16 @@ namespace ConsoleLimbus
             skillArray[1] = player.CharacterSkill.GetSkill(1); //스킬 슬롯 2개 채우기
             //▼적 초기설정 (무조건 공격만 하도록)
             Character enemy1 = new Enemy("마히스", 30, 10);
-            SkillParent enemySkillOne = new SkillOne("사선베기", 3, 2, eSkillDamageType.Damage);
+            SkillParent enemySkillOne = new SkillOne("사선베기", 5, 2, eSkillDamageType.Damage);
             //▼전투
             Console.WriteLine($"전투 입장! 사용할 스킬을 선택해 주세요.");
             int turn = 1;
             while (true)
             {
+                Console.Clear();
+                int startPosY = PrintAsciiArt();
+                Console.SetCursorPosition(0, startPosY);
+
                 Console.WriteLine($"======================{turn}번째 턴======================");
                 Console.WriteLine($"현재 나의 체력: {player.CurrentHp} / {player.MaxHp}");
                 Console.WriteLine($"현재 적의 체력: {enemy1.CurrentHp} / {enemy1.MaxHp}");
@@ -231,34 +191,48 @@ namespace ConsoleLimbus
                 int enemyPower = 0;
                 if (selectdSkill.eCurSkillDamageType == eSkillDamageType.Damage)
                 {
-                    playerPower = battle.GetSkillPower(player, enemy1, selectdSkill);
+                    playerPower = battle.GetSkillPower(player, selectdSkill);
                 }
                 else if (selectdSkill.eCurSkillDamageType == eSkillDamageType.Heal)
                 {
-                    playerPower = battle.GetSkillPower(player, player, selectdSkill);
+                    playerPower = battle.GetSkillPower(player, selectdSkill);
                 }
 
                 //적 스킬사용
-                enemyPower = battle.GetSkillPower(enemy1, player, enemySkillOne);
+                enemyPower = battle.GetSkillPower(enemy1, enemySkillOne);
 
                 //합 시스템 (둘다 공격스킬일 경우 강한 스킬만 실행한다)
                 if(selectdSkill.eCurSkillDamageType == eSkillDamageType.Damage && enemySkillOne.eCurSkillDamageType == eSkillDamageType.Damage)
                 {
                     //무승부일때는 무효라고 가정
-                    if (playerPower > enemyPower) battle.UseSkill(player, enemy1, selectdSkill, playerPower);
-                    else if (playerPower < enemyPower) battle.UseSkill(enemy1, player, enemySkillOne, enemyPower);
+                    if (playerPower > enemyPower) //적이 데미지받음
+                    {
+                        battle.UseSkill(player, enemy1, selectdSkill, playerPower);
+                        int yPos = asciiArt.Length / 2;
+                        Shoot(asciiArt[0].Length,yPos);
+                        BlinkCharacter(asciiArt2, 70, 0); //적이 깜빡거리는 효과
+                    }
+                    else if (playerPower < enemyPower) //플레이어가 데미지받음
+                    {
+                        battle.UseSkill(enemy1, player, enemySkillOne, enemyPower);
+                        BlinkCharacter(asciiArt, 0, 0);  //플레이어가 데미지받아서 깜빡거리는 효과
+                    }
                 }
                 else
                 {   //힐일경우 합을 치지않고 그대로 진행
                     battle.UseSkill(player, player, selectdSkill, playerPower);
                     battle.UseSkill(enemy1, player, enemySkillOne, enemyPower);
+                    BlinkCharacter(asciiArt, 0, 0); //플레이어가 데미지받아서 깜빡거리는 효과
                 }
-
+                Thread.Sleep(500);
 
                 if (enemy1.CurrentHp <= 0)
                 {
+                    Console.SetCursorPosition(0, startPosY + 10);
                     Console.WriteLine("적을 처치했습니다!! 0을 입력시 메인메뉴로 돌아갑니다!");
                     Console.WriteLine($"처치보상: 500 Gold, Level Up!");
+                    player.SetLevel(1);
+                    player.SetMoney(500);
                     Console.WriteLine($"현재 플레이어 레벨 :{player.Level}, 소지금: {player.Money}");
 
                     while (Console.ReadLine() != "0") { }
@@ -266,6 +240,191 @@ namespace ConsoleLimbus
                 }
             }
             
+        }
+        public static void Combat(Player player, Character enemy1, SkillInfo selectdSkill, SkillParent enemySkillOne, BattleSystem battle, int startPosY)
+        {
+            //플레이어 스킬사용
+            //만약에 힐스킬이라면 합을 치면 안됨
+            int playerPower = 0;
+            int enemyPower = 0;
+            if (selectdSkill.eCurSkillDamageType == eSkillDamageType.Damage)
+            {
+                playerPower = battle.GetSkillPower(player, selectdSkill);
+            }
+            else if (selectdSkill.eCurSkillDamageType == eSkillDamageType.Heal)
+            {
+                playerPower = battle.GetSkillPower(player, selectdSkill);
+            }
+
+            //적 스킬사용
+            enemyPower = battle.GetSkillPower(enemy1, enemySkillOne);
+
+            //합 시스템 (둘다 공격스킬일 경우 강한 스킬만 실행한다)
+            if (selectdSkill.eCurSkillDamageType == eSkillDamageType.Damage && enemySkillOne.eCurSkillDamageType == eSkillDamageType.Damage)
+            {
+                //무승부일때는 무효라고 가정
+                if (playerPower > enemyPower) //적이 데미지받음
+                {
+                    battle.UseSkill(player, enemy1, selectdSkill, playerPower);
+                    int yPos = asciiArt.Length / 2;
+                    Shoot(asciiArt[0].Length, yPos);
+                    BlinkCharacter(asciiArt2, 70, 0); //적이 깜빡거리는 효과
+                }
+                else if (playerPower < enemyPower) //플레이어가 데미지받음
+                {
+                    battle.UseSkill(enemy1, player, enemySkillOne, enemyPower);
+                    BlinkCharacter(asciiArt, 0, 0);  //플레이어가 데미지받아서 깜빡거리는 효과
+                }
+            }
+            else
+            {   //힐일경우 합을 치지않고 그대로 진행
+                battle.UseSkill(player, player, selectdSkill, playerPower);
+                battle.UseSkill(enemy1, player, enemySkillOne, enemyPower);
+                BlinkCharacter(asciiArt, 0, 0); //플레이어가 데미지받아서 깜빡거리는 효과
+            }
+            Thread.Sleep(500);
+
+            if (enemy1.CurrentHp <= 0)
+            {
+                Console.SetCursorPosition(0, startPosY + 10);
+                Console.WriteLine("적을 처치했습니다!! 0을 입력시 메인메뉴로 돌아갑니다!");
+                Console.WriteLine($"처치보상: 500 Gold, Level Up!");
+                player.SetLevel(1);
+                player.SetMoney(500);
+                Console.WriteLine($"현재 플레이어 레벨 :{player.Level}, 소지금: {player.Money}");
+
+                while (Console.ReadLine() != "0") { }
+                return;
+            }
+        }
+
+        public static void Shoot(int xPos, int yPos)
+        {
+            int count = 0;
+            while(count < 30)
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    Console.SetCursorPosition(xPos+i, yPos);
+                    Console.Write(" ");
+                }
+                Console.Write("▶");
+                Console.WriteLine();
+                Thread.Sleep(100);
+                count++;
+            }
+
+            Thread.Sleep(700);
+        }
+
+        static string[] asciiArt = new string[]{
+                "                                      ",
+                "                                      ",
+                "   .................                  ",
+                "   .+%%%*%%%%%%%##-.                  ",
+                "   .*%%%%%%%%%%#%%-.                  ",
+                "   .#%%%%%%#===#%%=.                  ",
+                "*#%*%%%%%%#++==*%%+.                  ",
+                "+++=%%%%**++==+*#*+.                  ",
+                "-==+#%%%**%*==*++*+.                  ",
+                "--=%%%%%%%%#%%%=-::.                  ",
+                ".:#%%%%%%%%%%%%#*+=.                  ",
+                ":-#%%%%%%%%%%%%%*==.                  ",
+                ".*%%%%%%%%%%%%%%%#*=:::=-             ",
+                "=#%%%%%#*%%%%%%%%%%%%%#+=             ",
+                ".-##%%%==+#%%%%%%%%%%%%%#             ",
+                "..+#%%%#%%%%%%%%%%%%%%%%%#*==:        ",
+                "...=#**%#%%%%%%+.++*#%%%%%%%%%#*-::...",
+                "    .--*%%%+%%%*===-:::+#%%%%%%%%%#*=.",
+                "    -+*#%%*:%#%#.        -##%%%%%%%%%*",
+                "    ::*%%#=.#%%#:           -+++%%%%%*",
+                "    .:##%*..####:               =====-",
+                "    .*%%#* .*%%#.                     ",
+                "    =###%: :#%%#-                     ",
+                "    *###=   =%%%%#%%%#.               ",
+                "   .%%%%=   =%%%%%%%%%.               ",
+                "   .#%%%=...=##%%%%#%*.               ",
+                "**+--+*****++====-=++*.                      " };
+
+        static string[] asciiArt2 = new string[]
+        {
+            "        @@@@%@@@    ",
+"    @@@@@@@%@@@@    ",
+"   @%@@%@%@@@%@@    ",
+"  @@@%%%%@@%%@@@@   ",
+"  @@%%+#@@@@@@@@@@@ ",
+"  @@@#*#%@@@@@@@@@@@",
+"  @@@%#%%@@@@@%@@@@@",
+"  %%@@%@%@@@@%@@@@@ ",
+"  @%@@@%%%@@@@@@@@  ",
+" @@@@@@%@%@@*@@%@@  ",
+" @%%=#+**%@%.@@@@@  ",
+" #++%%@@%-@%.@%@@@  ",
+" :+#@@%@%-%%.@%%@@  ",
+".*+@@%@@%*@@.@%%@   ",
+".%:%%@  @@+%.%%@    ",
+" :@@@@  @@%%  %%    ",
+" @@@@@  @@@@  %%    ",
+" @@@@    @@@  %     "
+        };
+
+        static void BlinkCharacter(string[] art ,int xPos, int yPos)
+        {
+            
+            while (true)
+            {
+                int blinkCount = 3;
+                Console.SetCursorPosition(0, 0);
+                for (int i = 0; i < blinkCount; i++)
+                {
+                    //표시
+                    Console.SetCursorPosition(xPos, yPos);
+                    for (int j = 0; j < art.Length; j++)
+                    {
+                        Console.SetCursorPosition(xPos, yPos + j);
+                        Console.WriteLine(art[j]);
+                    }
+                    Thread.Sleep(500);
+
+                    //블링크
+                    for (int k = 0; k < art.Length; k++)
+                    {
+                        for (int x = 0; x < art[k].Length; x++)
+                        {
+                            Console.SetCursorPosition(xPos + x, yPos + k);
+                            Console.Write(" ");
+                        }
+                        Console.WriteLine();
+                    }
+                    Thread.Sleep(500);
+                }
+                break;
+            }
+        }
+
+        static int PrintAsciiArt()
+        {
+            int width = 0;
+            int height = 0;
+            int startX = Console.CursorLeft;
+            int startY = Console.CursorTop;
+
+            for (int i = 0; i < asciiArt.Length; i++)
+            {
+                Console.SetCursorPosition(0, startY + i);
+                Console.WriteLine(asciiArt[i]);
+            }
+            for (int i = 0; i < asciiArt2.Length; i++)
+            {
+                Console.SetCursorPosition(70, startY + i);
+                Console.WriteLine(asciiArt2[i]);
+            }
+
+            //캐릭터의 최대 y축을 보내서 바깥에서 거기서부터 시작할 수 있도록 설정
+            int max1 = startY + asciiArt.Length;
+            int max2 = startY + asciiArt.Length;
+            return (max1 > max2) ? max1 : max2;
+
         }
 
         public static void ShowInventoryWindow(Player player)
@@ -317,7 +476,7 @@ namespace ConsoleLimbus
             while(true)
             {
                 Console.Clear();
-                player.Equipment.PrintEquipment();
+                player.Equip.PrintEquipment();
                 Console.WriteLine("===================================================");
                 player.PrintInventoryItem();
                 Console.WriteLine("===================================================");
@@ -331,7 +490,11 @@ namespace ConsoleLimbus
                     Item itemBuf = player?.GetInventoryItem(equipMentName);
                     if (itemBuf != null)
                     {
-                        player.Equipment.SetEquipmentDic(itemBuf);
+                        if (itemBuf.itemType == eItemType.Accessory)
+                        {
+                            player.SetMaxHP(itemBuf); //악세사리의 경우 장착시 최대HP가 조절되기때문에 추가
+                        }
+                        player.Equip.SetEquipmentDic(itemBuf);
                     }
                 }
             }
@@ -354,7 +517,7 @@ namespace ConsoleLimbus
                     if (choice == 1) //구매
                     {
                         int buyItemIndex;
-                        Console.WriteLine("상점에는 이런 물건이 있습니다! 구매할 물건의 이름을 입력해주세요");
+                        Console.WriteLine("상점에는 이런 물건이 있습니다! 구매할 물건의 번호를 입력해주세요");
                         Console.WriteLine($"소지금: {player.Money}");
                         shop.ShowItems();
                         if(int.TryParse(Console.ReadLine(), out buyItemIndex))
@@ -367,13 +530,16 @@ namespace ConsoleLimbus
                     else if (choice == 2) //판매
                     {
                         string sellItemName;
-                        Console.WriteLine("어떤 물건을 파시겠습니까? 상점에서 파는 물건이라면 절반 가격으로 구매합니다!");
-                        Console.WriteLine("아니라면 등급별로 다른 금액으로 판매 가능합니다");
+                        Console.WriteLine("판매할 아이템의 이름을 입력해주세요!");
+                        Console.WriteLine("상점에서 파는 물건이라면 절반 가격으로 구매합니다! 아니면 등급별로 다른 금액");
                         Console.WriteLine($"C등급 가격: {shop.GetItemPrice(eItemGrade.C)} 등급이 상승할때마다 500원씩 증가");
 
+                        Console.WriteLine("===========상점에서 파는 물건================");
                         shop.ShowItems();
+                        player.PrintInventoryItem();
                         sellItemName = Console.ReadLine();
                         shop.SellItem(player, sellItemName); //판매
+                        Thread.Sleep(2000);
                     }
                     else if (choice == 0)
                     {
@@ -386,8 +552,12 @@ namespace ConsoleLimbus
 
         static void Main(string[] args)
         {
+            //##초기 창크기 지정 
+            Console.SetWindowSize(120, 50);   // 가로 120, 세로 50
+            Console.SetBufferSize(120, 50);   // 버퍼도 똑같이
+
             //##스킬 시스템
-            SkillParent skillParent1 = new SkillOne("얕은베기", 5, 2, eSkillDamageType.Damage);
+            SkillParent skillParent1 = new SkillOne("대응사격", 5, 2, eSkillDamageType.Damage);
             SkillParent skillParent2 = new SkillTwo("명상", 7, 2, eSkillDamageType.Heal);
             SkillParent skillParent3 = new SkillThree("약점간파", 9, 3, eSkillDamageType.Damage);
             SkillInfo[] skills = new SkillInfo[3];
@@ -452,7 +622,7 @@ namespace ConsoleLimbus
             }
             if(player1 is Player)
             {
-                shop.SellItem(player1 as Player, "낡은목걸이"); //판매
+                //shop.SellItem(player1 as Player, "낡은목걸이"); //판매
             }
             //## 메뉴를 만든다
             //장비, 상점, 가챠, 등

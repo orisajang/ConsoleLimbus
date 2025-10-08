@@ -184,6 +184,20 @@ namespace ConsoleLimbus
             value = _value;
         }
 
+        public bool IsEqualItem(Item other)  
+        {
+            //클래스가 동일값을 가지고있는지 확인하는 메서드
+            //클래스는 참조타입이기때문에 .Equals로 하면 같은 주소를 가리키는 객체끼리만 true반환해서 해당 메서드 생성
+            if (this.itemGrade == other.itemGrade &&
+                this.itemType == other.itemType &&
+                this.name == other.name &&
+                this.value == other.value)
+            {
+                return true;
+            }
+            else { return false; }
+        }
+
     }
     class WeaponItem:Item
     {
@@ -207,7 +221,7 @@ namespace ConsoleLimbus
         //딕셔너리에 튜플넣어서 해본다면?
         Dictionary<(eItemGrade, eItemType), int> inventoryDic = new Dictionary<(eItemGrade, eItemType), int>();
         List<Item> itemList = new List<Item>();
-
+        ItemFactory itemFactory = new ItemFactory();
         public Inventory()
         {
             InitDic(); //딕셔너리 초기화 (딕셔너리 내부 PrintInventory() 했을때 정렬되서 출력하기 위해)
@@ -232,11 +246,13 @@ namespace ConsoleLimbus
                 Console.WriteLine($"인덱스 초과! {itemList.Count}개 까지만 가능합니다");
                 return null;
             }
-
-
-            return itemList[index];
+            Item itemBuf = itemFactory.Create(itemList[index].itemType, itemList[index].itemGrade, itemList[index].name, itemList[index].value);
+            return itemBuf; //무조건 깊은복사로 새 객체 넘기기
         }
-
+        public Item GetItem(string name)
+        {
+            return itemList.Find(i => i.name == name);
+        }
         public void AddItems(List<Item> items)
         {
             foreach(var kv in items)
@@ -246,6 +262,24 @@ namespace ConsoleLimbus
                 itemList.Add(kv); //상세 아이템을 가지고 있기 위한 리스트
             }
         }
+        public void DeleteItem(Item item)
+        {
+            //딕셔너리에 있는 항목 지우기
+            //리스트에 있는 항목 지우기
+            //이미 없는 항목인지 체크.. 해야되는데 없으면 애초에 이 메서드를 타면 안됨 일부로 예외처리 안해보기
+            int index = itemList.FindIndex(i => i.IsEqualItem(item)); //같은곳 인덱스 찾아서
+            if (index >= 0)
+            {
+                itemList.RemoveAt(index); //리스트 삭제
+                inventoryDic[(item.itemGrade, item.itemType)] -= 1; //딕셔너리 삭제
+            }
+        }
+        public bool HaveItem(Item item)
+        {
+            return itemList.Any(i => i.name == item.name); //Any로 존재하는지 확인
+        }
+        
+
         public void PrintInventory()
         {
             Console.WriteLine("===인벤토리 목록===");

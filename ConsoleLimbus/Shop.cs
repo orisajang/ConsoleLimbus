@@ -80,6 +80,55 @@ namespace ConsoleLimbus
             }
             else { Console.WriteLine("돈이 부족합니다"); }
         }
+
+        public int GetItemPrice(eItemGrade itemGrade)
+        {
+            int price = 0;
+            switch(itemGrade)
+            {
+                case eItemGrade.C:
+                    price = 500;
+                    break;
+                case eItemGrade.B:
+                    price = 1000;
+                    break;
+                case eItemGrade.A:
+                    price = 1500;
+                    break;
+                case eItemGrade.S:
+                    price = 2000;
+                    break;
+                case eItemGrade.SS:
+                    price = 2500;
+                    break;
+                default:
+                    price = 0;
+                    break;
+            }
+            return price;
+        }
+
+        public void SellItem(Player player, string itemName)
+        {
+            //아이템 판매기능. 상점에 동일한 아이템이 있을경우 반값, 아니라면 등급별로 판매금액 얻음
+            if(shopItemsDic.ContainsKey(itemName)) //상점에 해당 아이템이 있는지
+            {
+                var itemBuf = shopItemsDic[itemName];
+                if (player.IsPlayerHaveItem(itemBuf.item)) //플레이어가 아이템을 가지고있는지
+                {
+                    player.DeleteInventoryItem(itemBuf.item);
+                    player.SetMoney(itemBuf.price / 2); //반값만큼 돈 증가
+                }
+            }
+            else
+            {
+                //안가지고있으면 price 가격으로 판매
+                Item itemByPlayer = player.GetPlayerItem(itemName); //플레이어에게서 아이템 있는지 확인
+                int salesAmount = GetItemPrice(itemByPlayer.itemGrade); //상점에 없는 아이템의 경우 등급에 맞게 돈 증가
+                player.DeleteInventoryItem(itemByPlayer);
+                player.SetMoney(salesAmount); //돈 증가
+            }
+        }
         
     }
 }

@@ -63,14 +63,37 @@ namespace ConsoleLimbus
         {
             money += value;
         }
-
-        public void AddInventoryItem(Item _item)
+        public void AddInventoryItem(Item _item) //메서드 오버로딩1
         {
             ItemFactory itemFactory = new ItemFactory();
             Item itemBuf = itemFactory.Create(_item.itemType, _item.itemGrade, _item.name, _item.value);
             List<Item> itemListBuf = new List<Item>();
             itemListBuf.Add(itemBuf);
             inventory.AddItems(itemListBuf);
+        }
+        public void AddInventoryItem(List<Item> _items) //메서드 오버로딩2
+        {
+            inventory.AddItems(_items); //이 함수 쓰기전에 _items가 얕은복사여도 괜찮은지 확인해야함
+        }
+        public void DeleteInventoryItem(Item _item)
+        {
+            inventory.DeleteItem(_item);
+        }
+        public bool IsPlayerHaveItem(Item _item)
+        {
+            return inventory.HaveItem(_item);
+        }
+        public Item GetPlayerItem(string  _name)
+        {
+            return inventory.GetItem(_name);
+        }
+        public void PrintInventoryItem()
+        {
+            inventory.PrintInventoryBuf();
+        }
+        public Item GetInventoryItem(int index)
+        {
+            return inventory.GetItem(index);
         }
     }
 
@@ -340,10 +363,15 @@ namespace ConsoleLimbus
             //(완료2)Print할때 등급별로 정렬되서 Print되도록 하기 + 이름 추가해서
             Gacha gacha = new Gacha();
             List<Item> gachaItem = gacha.DoGacha(100);
-            Inventory inventory = new Inventory();
-            inventory.AddItems(gachaItem);
+            //Inventory inventory = new Inventory();
+            if(player1 is Player)
+            {
+                (player1 as Player)?.AddInventoryItem(gachaItem);
+                (player1 as Player)?.PrintInventoryItem();
+            }
+            //inventory.AddItems(gachaItem);
             //inventory.PrintInventory(); //해당메서드 삭제 예정
-            inventory.PrintInventoryBuf();
+            //inventory.PrintInventoryBuf();
 
             //## 장비 시스템
             //인벤토리에서 뽑은 아이템을 장착.
@@ -351,10 +379,9 @@ namespace ConsoleLimbus
             //(완료)등급과 장비타입이 뽑혔을때 해당하는 등급과타입인 아이템 배열에서 또 랜덤하게 선택.
             //가챠클래스에서 InitGachaItem()를 Json데이터를 읽어오는 방법 고려해보기.. 코드가 너무 김
             Equipment equipment = new Equipment();
-            equipment.SetEquipmentDic(inventory.GetItem(0));
-            equipment.SetEquipmentDic(inventory.GetItem(2));
-            equipment.SetEquipmentDic(inventory.GetItem(4));
-
+            equipment.SetEquipmentDic((player1 as Player)?.GetInventoryItem(0));
+            equipment.SetEquipmentDic((player1 as Player)?.GetInventoryItem(2));
+            equipment.SetEquipmentDic((player1 as Player)?.GetInventoryItem(4));
             equipment.PrintEquipment();
 
 
@@ -362,15 +389,16 @@ namespace ConsoleLimbus
             //그냥 가챠에서 뽑지말고 상점에서 구매할수 있도록
             //(완료)데이터베이스 클래스 만들어서 아이템 정보를 담기(싱글톤으로)
             //(완료)데이터베이스 클래스에서 상점에서 팔 아이템 골라서 넣기
-            //구매,판매 기능 넣기
+            //(완료)구매,판매 기능 넣기
             Shop shop = new Shop();
             if(player1 is Player)
             {
-                shop.BuyItem(player1 as Player, "녹슨갑옷");
+                shop.BuyItem(player1 as Player, "녹슨갑옷"); //구매
             }
-            
-
-
+            if(player1 is Player)
+            {
+                shop.SellItem(player1 as Player, "낡은목걸이"); //판매
+            }
 
             //SetCursor(); //선택지 선택
 

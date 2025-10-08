@@ -24,7 +24,7 @@ namespace ConsoleLimbus
             foreach (eItemType item in k)
             {
                 ItemFactory itemFactory = new ItemFactory();
-                Item itemBuf = itemFactory.Create(item, eItemGrade.C,"",0);
+                Item itemBuf = itemFactory.Create(item, eItemGrade.C,"초기장비",0);
                 equipmentDic.Add(item, itemBuf);
             }
         }
@@ -40,7 +40,7 @@ namespace ConsoleLimbus
             foreach(eItemType item in k)
             {
                 Item itemBuf = equipmentDic[item];
-                Console.WriteLine($"{itemBuf.itemType}은 {itemBuf.itemGrade} 등급 장비를 장착중입니다");
+                Console.WriteLine($"{itemBuf.itemType}은 {itemBuf.itemGrade} 등급 {itemBuf.name}를 장착중입니다");
             }
             Console.WriteLine("============================");
         }

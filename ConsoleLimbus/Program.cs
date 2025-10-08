@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
+using System.Threading;
 
 namespace ConsoleLimbus
 {
@@ -55,13 +56,27 @@ namespace ConsoleLimbus
     {
         public int Money { get { return money; } }
         Inventory inventory = new Inventory();
+        Equipment equipment = new Equipment();
+
+        public Equipment Equipment { get { return equipment; } }
+
         public Player(string _name, int _maxHp, int _level) : base(_name, _maxHp, _level)
         {
             money = 10000; //초기 돈
         }
-        public void SetMoney(int value)
+        public bool SetMoney(int value)
         {
+            if(money + value < 0)
+            {
+                Console.WriteLine("금액부족!!");
+                return false; //음수인경우 false
+            }
             money += value;
+            return true;
+        }
+        public void SetName(string _name)
+        {
+            name = _name;
         }
         public void AddInventoryItem(Item _item) //메서드 오버로딩1
         {
@@ -83,18 +98,19 @@ namespace ConsoleLimbus
         {
             return inventory.HaveItem(_item);
         }
-        public Item GetPlayerItem(string  _name)
+        public Item GetInventoryItem(string _name)
         {
             return inventory.GetItem(_name);
-        }
-        public void PrintInventoryItem()
-        {
-            inventory.PrintInventoryBuf();
         }
         public Item GetInventoryItem(int index)
         {
             return inventory.GetItem(index);
         }
+        public void PrintInventoryItem()
+        {
+            inventory.PrintInventoryBuf();
+        }
+       
     }
 
     class BattleSystem
@@ -333,6 +349,163 @@ namespace ConsoleLimbus
             Console.WriteLine("왼쪽 VS 오른쪽 전투 화면!");
 
         }
+
+        static void ShowMainWindow(Player player)
+        {
+            Console.WriteLine("===================================================");
+            Console.WriteLine("안녕하세요 당신의 이름을 입력해주세요!!");
+            player.SetName(Console.ReadLine());
+            Console.WriteLine();
+            Console.WriteLine("===================================================");
+            while(true)
+            {
+                Console.Clear();
+                Console.WriteLine("===================================================");
+                Console.WriteLine($"환영합니다 {player.Name}님");
+                Console.WriteLine("무엇을 해보시겠습니까?");
+                Console.WriteLine("1. 인벤토리 2. 장비장착 3. 가챠  4. 상점 5.전투 ");
+                Console.WriteLine("===================================================");
+
+                int choice;
+                int.TryParse(Console.ReadLine(), out choice);
+                switch(choice)
+                {
+                    case 1:
+                        //인벤토리 설정
+                        ShowInventoryWindow(player);
+                        break;
+                    case 2:
+                        //장비 장착
+                        ShowEquipmentWindow(player);
+                        break;
+                    case 3:
+                        //가챠
+                        ShowGachaWindow(player);
+                        break;
+                    case 4:
+                        //상점
+                        ShowShopWindow(player);
+                        break;
+                    case 5:
+                        //전투
+                        break;
+                    default:
+                        Console.WriteLine("1~5까지 입력해주세요");
+                        break;
+                }
+
+            }
+        }
+        public static void ShowInventoryWindow(Player player)
+        {
+            while(true)
+            {
+                Console.Clear();
+                player.PrintInventoryItem();
+                //Console.WriteLine("버릴 아이템이 있다면 해당 숫자를,");
+                Console.WriteLine("이전 화면으로 돌아가시려면 0번을 입력해주세요");
+                int index = 0;
+                int.TryParse(Console.ReadLine(), out index);
+                if (index == 0) break;
+            }
+        }
+        public static void ShowGachaWindow(Player player)
+        {
+            Console.WriteLine("===================================================");
+            Console.WriteLine("오늘의 운세는 어떠신가요? 상점보다 매우 저렴한 뽑기로 행운을 노려보세요!");
+            Console.WriteLine($"몇회 뽑으시겠습니까? 1회 100 Gold 입니다! 소지금:{player.Money}");
+            int count;
+            if(int.TryParse(Console.ReadLine(), out count))
+            {
+                Gacha gacha = new Gacha();
+                List<Item> gachaItem = gacha.DoGacha((player as Player), count);
+                //Inventory inventory = new Inventory();
+                if (player is Player)
+                {
+                    (player as Player)?.AddInventoryItem(gachaItem);
+                    (player as Player)?.PrintInventoryItem();
+                    Console.WriteLine("가챠 완료! 0을 입력하시면 메인메뉴로 돌아갑니다");
+                    while(true)
+                    {
+                        if (Console.ReadLine() == "0") break;
+                    }
+                }
+            }
+        }
+
+        public static void ShowEquipmentWindow(Player player)
+        {
+            //Equipment equipment = new Equipment();
+            while(true)
+            {
+                Console.Clear();
+                Console.WriteLine("===================================================");
+                player.Equipment.PrintEquipment();
+                Console.WriteLine("===================================================");
+                player.PrintInventoryItem();
+                Console.WriteLine("===================================================");
+                Console.WriteLine("어떤 장비를 장착하시겠습니까? -> 이름 입력");
+                Console.WriteLine("메인으로 돌아가려면 0을 입력해주세요");
+                string equipMentName = Console.ReadLine();
+
+                if (equipMentName == "0") break;
+                else
+                {
+                    Item itemBuf = player?.GetInventoryItem(equipMentName);
+                    if (itemBuf != null)
+                    {
+                        player.Equipment.SetEquipmentDic(itemBuf);
+                    }
+                }
+            }
+        }
+
+        public static void ShowShopWindow(Player player)
+        {
+            Shop shop = new Shop();
+            while(true)
+            {
+                Console.WriteLine("===================================================");
+                Console.WriteLine($"상점에 오신걸 환영합니다!! 무엇을 원하시나요? 소지금: {player.Money}");
+                Console.WriteLine("1. 구매 2. 판매  0. 메인으로 돌아가기");
+                int choice;
+                
+                
+                if (int.TryParse(Console.ReadLine(), out choice))
+                {
+                    if (choice == 1) //구매
+                    {
+                        int buyItemIndex;
+                        Console.WriteLine("상점에는 이런 물건이 있습니다! 구매할 물건의 이름을 입력해주세요");
+                        Console.WriteLine($"소지금: {player.Money}");
+                        shop.ShowItems();
+                        if(int.TryParse(Console.ReadLine(), out buyItemIndex))
+                        {
+                            shop.BuyItem(player, buyItemIndex); //구매
+                            Console.WriteLine("구매 완료!");
+                            Thread.Sleep(2000);
+                        }
+                    }
+                    else if (choice == 2) //판매
+                    {
+                        string sellItemName;
+                        Console.WriteLine("어떤 물건을 파시겠습니까? 상점에서 파는 물건이라면 절반 가격으로 구매합니다!");
+                        Console.WriteLine("아니라면 등급별로 다른 금액으로 판매 가능합니다");
+                        Console.WriteLine($"C등급 가격: {shop.GetItemPrice(eItemGrade.C)} 등급이 상승할때마다 500원씩 증가");
+
+                        shop.ShowItems();
+                        sellItemName = Console.ReadLine();
+                        shop.SellItem(player, sellItemName); //판매
+                    }
+                    else if (choice == 0)
+                    {
+                        break; // 돌아가기
+                    }
+                }
+            }
+        }
+
+
         static void Main(string[] args)
         {
             //##스킬 시스템
@@ -355,6 +528,12 @@ namespace ConsoleLimbus
             battle.UseSkill(player1, enemy1, k2);
             //sm.SetBasicSkill();
 
+            //##메뉴 시작.
+
+            ShowMainWindow(player1 as Player);
+
+
+
 
             //##가챠 + 인벤토리 시스템
             //(완료)가챠 구조 확인 및 인벤토리에 가챠 어떻게 넣을것인지,
@@ -362,7 +541,7 @@ namespace ConsoleLimbus
             //(완료)가챠하고나서 등급 , 등급별 색상 뽑기에 콘솔로 출력
             //(완료2)Print할때 등급별로 정렬되서 Print되도록 하기 + 이름 추가해서
             Gacha gacha = new Gacha();
-            List<Item> gachaItem = gacha.DoGacha(100);
+            List<Item> gachaItem = gacha.DoGacha((player1 as Player),100);
             //Inventory inventory = new Inventory();
             if(player1 is Player)
             {
@@ -393,12 +572,15 @@ namespace ConsoleLimbus
             Shop shop = new Shop();
             if(player1 is Player)
             {
-                shop.BuyItem(player1 as Player, "녹슨갑옷"); //구매
+                //shop.BuyItem(player1 as Player, "녹슨갑옷"); //구매
             }
             if(player1 is Player)
             {
                 shop.SellItem(player1 as Player, "낡은목걸이"); //판매
             }
+            //## 메뉴를 만든다
+            //장비, 상점, 가챠, 등
+
 
             //SetCursor(); //선택지 선택
 

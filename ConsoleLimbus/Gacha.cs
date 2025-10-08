@@ -94,8 +94,15 @@ namespace ConsoleLimbus
             {eItemGrade.SS,3 }
         };
         //가챠 시작
-        public List<Item> DoGacha(int count)
+        public List<Item> DoGacha(Player player, int count)
         {
+            int billAmount = count * 10;
+            if(player.Money < billAmount)
+            {
+                Console.WriteLine("금액이 부족합니다");
+                return null;
+            }
+
             List<Item> itemList = new List<Item>();
             Console.WriteLine("======가챠 시작======");
             for(int i=0; i< count; i++)
@@ -114,6 +121,7 @@ namespace ConsoleLimbus
                 itemList.Add(itemBuf);
             }
             Console.WriteLine($"======가챠 끝 {count * 1000} 원을 사용했습니다======");
+            player.SetMoney(-billAmount);
             return itemList;
         }
         public void PrintGachaItem(eItemGrade itemGrade, eItemType itemType)
@@ -291,6 +299,14 @@ namespace ConsoleLimbus
         public void PrintInventoryBuf()
         {
             //item목록을 전부 출력하는 메서드. 등급,타입별로 출력하도록 설정
+
+            if(itemList.Count <= 0)
+            {
+                Console.WriteLine("아무 아이템도 없습니다");
+                return;
+            }
+
+
             Dictionary<(eItemGrade, eItemType, string), int> dic = new Dictionary<(eItemGrade, eItemType, string), int>();
             //▼OrderBy의 람다식으로 리스트 정렬
             var sorted = itemList.OrderBy(i => i.itemGrade)
@@ -307,9 +323,12 @@ namespace ConsoleLimbus
                 dic[(item.itemGrade, item.itemType, item.name)]++;
             }
             //▼출력
+            Console.WriteLine("=====아이템을 등급,타입,갯수별로 출력=====");
+            int index = 1;
             foreach(var item in dic)
             {
-                Console.WriteLine($"등급:{item.Key.Item1} 타입:{item.Key.Item2} 이름:{item.Key.Item3} 갯수{item.Value}");
+                Console.WriteLine($"{index}. 등급:{item.Key.Item1} 타입:{item.Key.Item2} 이름:{item.Key.Item3} 갯수{item.Value}");
+                index++; //아이템 갯수
             }
         }
     }

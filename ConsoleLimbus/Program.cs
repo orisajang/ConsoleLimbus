@@ -150,7 +150,7 @@ namespace ConsoleLimbus
             skillArray[0] = player.CharacterSkill.GetSkill(1); //스킬 슬롯 2개 채우기
             skillArray[1] = player.CharacterSkill.GetSkill(1); //스킬 슬롯 2개 채우기
             //▼적 초기설정 (무조건 공격만 하도록)
-            Character enemy1 = new Enemy("마히스", 30, 10);
+            Character enemy1 = new Enemy("마히스", 10, 10);
             SkillParent enemySkillOne = new SkillOne("사선베기", 5, 2, eSkillDamageType.Damage);
             //▼전투
             Console.WriteLine($"전투 입장! 사용할 스킬을 선택해 주세요.");
@@ -185,63 +185,12 @@ namespace ConsoleLimbus
                 }
                 Console.ResetColor();
 
-                //플레이어 스킬사용
-                //만약에 힐스킬이라면 합을 치면 안됨
-                int playerPower = 0;
-                int enemyPower = 0;
-                if (selectdSkill.eCurSkillDamageType == eSkillDamageType.Damage)
-                {
-                    playerPower = battle.GetSkillPower(player, selectdSkill);
-                }
-                else if (selectdSkill.eCurSkillDamageType == eSkillDamageType.Heal)
-                {
-                    playerPower = battle.GetSkillPower(player, selectdSkill);
-                }
-
-                //적 스킬사용
-                enemyPower = battle.GetSkillPower(enemy1, enemySkillOne);
-
-                //합 시스템 (둘다 공격스킬일 경우 강한 스킬만 실행한다)
-                if(selectdSkill.eCurSkillDamageType == eSkillDamageType.Damage && enemySkillOne.eCurSkillDamageType == eSkillDamageType.Damage)
-                {
-                    //무승부일때는 무효라고 가정
-                    if (playerPower > enemyPower) //적이 데미지받음
-                    {
-                        battle.UseSkill(player, enemy1, selectdSkill, playerPower);
-                        int yPos = asciiArt.Length / 2;
-                        Shoot(asciiArt[0].Length,yPos);
-                        BlinkCharacter(asciiArt2, 70, 0); //적이 깜빡거리는 효과
-                    }
-                    else if (playerPower < enemyPower) //플레이어가 데미지받음
-                    {
-                        battle.UseSkill(enemy1, player, enemySkillOne, enemyPower);
-                        BlinkCharacter(asciiArt, 0, 0);  //플레이어가 데미지받아서 깜빡거리는 효과
-                    }
-                }
-                else
-                {   //힐일경우 합을 치지않고 그대로 진행
-                    battle.UseSkill(player, player, selectdSkill, playerPower);
-                    battle.UseSkill(enemy1, player, enemySkillOne, enemyPower);
-                    BlinkCharacter(asciiArt, 0, 0); //플레이어가 데미지받아서 깜빡거리는 효과
-                }
-                Thread.Sleep(500);
-
-                if (enemy1.CurrentHp <= 0)
-                {
-                    Console.SetCursorPosition(0, startPosY + 10);
-                    Console.WriteLine("적을 처치했습니다!! 0을 입력시 메인메뉴로 돌아갑니다!");
-                    Console.WriteLine($"처치보상: 500 Gold, Level Up!");
-                    player.SetLevel(1);
-                    player.SetMoney(500);
-                    Console.WriteLine($"현재 플레이어 레벨 :{player.Level}, 소지금: {player.Money}");
-
-                    while (Console.ReadLine() != "0") { }
-                    return;
-                }
+                bool isEnd = Combat(player, enemy1, selectdSkill, enemySkillOne, battle, startPosY);
+                if (isEnd) break;
             }
             
         }
-        public static void Combat(Player player, Character enemy1, SkillInfo selectdSkill, SkillParent enemySkillOne, BattleSystem battle, int startPosY)
+        public static bool Combat(Player player, Character enemy1, SkillInfo selectdSkill, SkillParent enemySkillOne, BattleSystem battle, int startPosY)
         {
             //플레이어 스킬사용
             //만약에 힐스킬이라면 합을 치면 안됨
@@ -294,8 +243,17 @@ namespace ConsoleLimbus
                 Console.WriteLine($"현재 플레이어 레벨 :{player.Level}, 소지금: {player.Money}");
 
                 while (Console.ReadLine() != "0") { }
-                return;
+                return true;
             }
+            else if (player.CurrentHp <= 0)
+            {
+                Console.SetCursorPosition(0, startPosY + 10);
+                Console.WriteLine("플레이어가 사망했습니다... 0을 입력시 메인메뉴로 돌아갑니다!");
+                player.InitCurrentHP();
+                while (Console.ReadLine() != "0") { }
+                return true;
+            }
+            return false;
         }
 
         public static void Shoot(int xPos, int yPos)
@@ -568,7 +526,7 @@ namespace ConsoleLimbus
             sm.SetSkill(skills);
             var k = sm.GetSkill(1); //k를 얻어왔으니 k를 쓰면됨
             
-            Character player1 = new Player("히스클리프", 100, 5);
+            Character player1 = new Player("히스클리프", 10, 5);
             player1.SetPlayerSkills(sm);
 
             

@@ -68,6 +68,10 @@ namespace ConsoleLimbus
             if (maxHP < 0) maxHP = 1;
             if (maxHP < currentHp) currentHp = maxHP;
         } 
+        public void InitCurrentHP() //플레이어 사망시 현재HP를 다시 최대HP로 설정
+        {
+            currentHp = MaxHp;
+        }
     }
     class Enemy : Character
     {

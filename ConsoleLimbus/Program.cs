@@ -1,125 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace ConsoleLimbus
 {
-    abstract class Character
-    {
-        protected string name;
-        private int maxHP;
-        protected int currentHp;
-
-        protected int mentality;
-        protected int stagger;
-        protected int speed;
-        protected int level;
-        protected int money;
-        protected SkillManager characterSkill = new SkillManager();
-
-        public int Mentality => mentality;
-        public int CurrentHp => currentHp;
-        public string Name => name;
-        public SkillManager CharacterSkill => characterSkill;
-        public Character(string _name, int _maxHp, int _level)
-        {
-            name = _name;
-            maxHP = _maxHp + (_level * 2);  //1레벨 hp + level * hp상승량
-            currentHp = maxHP; //초기 hp량
-            mentality = 0; //초기 0
-        }
-        public void TakeDamage(int damage)
-        {
-            currentHp = Math.Max(0, currentHp - damage); //체력이 0이하로 떨어지지않게
-            Console.WriteLine($"{Name}가 {damage}데미지 받음! 남은 hp:{currentHp}");
-        }
-        public void Healing(int amount)
-        {
-            int sumHpValue = currentHp + amount;
-            currentHp = (sumHpValue > maxHP) ? maxHP : sumHpValue; //MaxHp보다 더한값이 크다면 max값 적용
-            Console.WriteLine($"{Name}가 {amount}힐 받음! 남은 hp:{currentHp}");
-        }
-
-        public void SetPlayerSkills(SkillManager sm)
-        {
-            characterSkill = sm;
-        }
-    }
-    class Enemy : Character
-    {
-        public Enemy(string _name, int _maxHp, int _level) : base(_name, _maxHp, _level)
-        {
-        }
-    }
-    class Player : Character
-    {
-        public int Money { get { return money; } }
-        Inventory inventory = new Inventory();
-        Equipment equipment = new Equipment();
-
-        public Equipment Equipment { get { return equipment; } }
-
-        public Player(string _name, int _maxHp, int _level) : base(_name, _maxHp, _level)
-        {
-            money = 10000; //초기 돈
-        }
-        public bool SetMoney(int value)
-        {
-            if(money + value < 0)
-            {
-                Console.WriteLine("금액부족!!");
-                return false; //음수인경우 false
-            }
-            money += value;
-            return true;
-        }
-        public void SetName(string _name)
-        {
-            name = _name;
-        }
-        public void AddInventoryItem(Item _item) //메서드 오버로딩1
-        {
-            ItemFactory itemFactory = new ItemFactory();
-            Item itemBuf = itemFactory.Create(_item.itemType, _item.itemGrade, _item.name, _item.value);
-            List<Item> itemListBuf = new List<Item>();
-            itemListBuf.Add(itemBuf);
-            inventory.AddItems(itemListBuf);
-        }
-        public void AddInventoryItem(List<Item> _items) //메서드 오버로딩2
-        {
-            inventory.AddItems(_items); //이 함수 쓰기전에 _items가 얕은복사여도 괜찮은지 확인해야함
-        }
-        public void DeleteInventoryItem(Item _item)
-        {
-            inventory.DeleteItem(_item);
-        }
-        public bool IsPlayerHaveItem(Item _item)
-        {
-            return inventory.HaveItem(_item);
-        }
-        public Item GetInventoryItem(string _name)
-        {
-            return inventory.GetItem(_name);
-        }
-        public Item GetInventoryItem(int index)
-        {
-            return inventory.GetItem(index);
-        }
-        public void PrintInventoryItem()
-        {
-            inventory.PrintInventoryBuf();
-        }
-       
-    }
-
     class BattleSystem
     {
         Random rnd = new Random();
-        public void UseSkill(Character character1, Character targetCharacter, SkillInfo skill)
+        public int UseSkillBuf(Character character1, Character targetCharacter, SkillInfo skill)
         {
             //플레이어1가 target플레이어한테 스킬 값만큼 힐을주거나, 데미지를 줌 (target에 자기자신줘서 자신데미지, 자신힐도 가능)
-            Console.WriteLine($"{character1.Name}");
 
             int mental = character1.Mentality; //정신력 -45~ 45까지
             //정신력이 0이라면? 50퍼 , 정신력이 -45라면? 5퍼, 정신력이 45라면 95퍼센트 확률로 
@@ -133,7 +25,17 @@ namespace ConsoleLimbus
             {
                 if (rnd.Next(0, 100) < percent) coinFrontCount++;
             }
-            int amount = skill.power * coinFrontCount; //coinFrontCount가 0일떄 어떻게하지?
+            int amount = skill.power * coinFrontCount;
+            //코인 앞뒤면 정보와 위력 출력
+            Console.Write($"{character1.Name}: 코인: ");
+            for (int i = 0; i < skill.coinCount; i++)
+            {
+                if (i < coinFrontCount - 1) Console.Write("●");
+                else Console.Write("○");
+
+            }
+            Console.WriteLine($" 위력: {amount}");
+
             switch (skill.eCurSkillDamageType)
             {
                 case eSkillDamageType.Damage:
@@ -146,165 +48,48 @@ namespace ConsoleLimbus
                     targetCharacter.Healing(amount);
                     break;
             }
-
+            return amount; //위력을 출력해서 서로 합을 칠수 있게 설정
         }
-    }
-
-    enum eSkillType
-    {
-        SkillOne, SkillTwo, SkillThree
-    }
-    enum eSkillDamageType
-    {
-        Damage, Heal
-    }
-    class SkillManager
-    {
-        List<SkillInfo> basicSkillList = new List<SkillInfo>(); //스킬6개중에서 랜덤으로 1개씩 빠짐.(추가/삭제가 빈번하다) -> LinkedList
-        Dictionary<eSkillType, SkillInfo> skillDic = new Dictionary<eSkillType, SkillInfo>(); //스킬타입과 스킬에 대한 정보
-        SkillInfo[] skillSlots = new SkillInfo[2]; //스킬슬롯 2개
-        Random rnd = new Random();
-
-        public SkillInfo GetSkill(int inputSkillIndex)
+        public int GetSkillPower(Character character1, Character targetCharacter, SkillInfo skill)
         {
-            int useSkillIndex = inputSkillIndex - 1; //실제 배열에서 쓰는 index로 변경
-            //useSkillIndex 로 들어오는값 => 1,2,  0 1 기준으로
-            //예외처리
-            if (useSkillIndex < 0 || useSkillIndex >= skillSlots.Length)
+            //스킬 위력을 얻어오는 메서드 (스킬위력을 서로 비교해서 플레이어와 적중에 누가 공격할지 정함
+
+            //▼추후 추가예정(정신력시스템, 합을 지면 정신력이 내려가서.. 점점 질 확률이 늘어남)
+            int mental = character1.Mentality; //정신력 -45~ 45까지
+            //정신력이 0이라면? 50퍼 , 정신력이 -45라면? 5퍼, 정신력이 45라면 95퍼센트 확률로 
+            int percent = 50 + character1.Mentality;// 5, 95
+
+            //코인 앞뒤면 체크
+            int coinFrontCount = 1; //코인 앞면 나온 횟수,  1부터 시작, 1개증가할때마다 N배가됨
+            for (int i = 0; i < skill.coinCount; i++)
             {
-                Console.WriteLine("에러. 스킬선택은 1이나 2여야합니다");
-                return null;
+                if (rnd.Next(0, 100) < percent) coinFrontCount++;
             }
-            //스킬 슬롯에 있는 스킬 사용
-            if (skillSlots[useSkillIndex] == null)
+            int amount = skill.power * coinFrontCount;
+            //코인 앞뒤면 정보와 위력 출력
+            Console.Write($"{character1.Name}: 코인: ");
+            for (int i = 0; i < skill.coinCount; i++)
             {
-                Console.WriteLine("스킬이 없어요. 로직이 뭔가 잘못됨.");
-                return null;
+                if (i < coinFrontCount - 1) Console.Write("●");
+                else Console.Write("○");
             }
-
-            //선택한 스킬 사용
-            SkillInfo skillBuf = skillSlots[useSkillIndex];
-            skillSlots[useSkillIndex] = null;
-
-            SetSkillSlot(); //사용하고 바로 다시 Skill Set
-
-            return skillBuf;
+            Console.WriteLine($" 위력: {amount}");
+            return amount; //위력을 출력해서 서로 합을 칠수 있게 설정
         }
-        private void SetSkillSlot() //자동으로 채울것이기때문에 private
+        public void UseSkill(Character character1, Character targetCharacter, SkillInfo skill,int amount)
         {
-            //스킬슬롯은 2개가 있고, 초기에는 6개의 스킬중 2개를 랜덤으로 뽑아서 슬롯2개에 넣는다.
-            //스킬1개를 사용했다면 남은 스킬중에서 1개를 랜덤으로 뽑는다.
-            //6개를 모두 다 사용했다면? 다시 SetBasicSkill로 스킬6개를 채운다
-            for (int i = 0; i < skillSlots.Length; i++)
+            switch (skill.eCurSkillDamageType)
             {
-                if (skillSlots[i] == null) //null이면 추가 (사용해서 null이거나 초기null이면)
-                {
-                    //자료구조 탐색
-                    //2. 링크드 리스트로 (삭제는 빠른데 인덱스 접근이 느림)
-                    //3. 딕셔너리로 enum에 스킬 갯수를 count해서 접근 
-                    //  - 어려움: 이유) 딕셔너리로 value을 for문돌면서 갯수세기
-                    //  - 어려움2: 이유) 랜덤int값이 나왔을때 특정enum을 가중치에 따라 선택하고 value값 --; (value값이 0인지도 확인해야함)
-
-                    //1. 리스트로 (삭제가 느리지만 최대6개니까 그냥 사용하기로함)
-                    if (basicSkillList.Count == 0) SetBasicSkill(); //다시 채움
-
-                    int skillRemain = basicSkillList.Count; //남은 스킬 갯수
-                    int rndNumber = rnd.Next(0, skillRemain); //배열은 0~5 가 6개이므로 max에 +1안해도됨
-                    var k = basicSkillList[rndNumber];
-                    skillSlots[i] = k;
-                    basicSkillList.Remove(k);
-                }
-            }
-        }
-        public void SetSkill(SkillInfo[] skills)
-        {
-            //스킬1, 스킬2, 스킬3의 정보가 Set된다.
-            for (int i = 0; i < 3; i++)
-            {
-                skillDic.Add(skills[i].eCurSkillType, skills[i]);
-            }
-            SetBasicSkill(); //스킬1, 스킬2, 스킬3이 몇개씩 들어가 있어야하는지 정보 설정
-            SetSkillSlot(); //스킬슬롯 2개 
-        }
-        public void SetBasicSkill()
-        {
-            //skillDic 에 있는 정보를 이용하여 List에 Set
-            /*
-            //아래 주석친 방법대로 하려다가 foreach로 중복코드 제거 있어서 사용
-            SkillInfo skill_1 = skillDic[eSkillType.SkillOne];
-            SkillInfo skill_2 = skillDic[eSkillType.SkillTwo];
-            SkillInfo skill_3 = skillDic[eSkillType.SkillThree];
-            for (int i = 0; i<skill_1.skillCount; i++)
-            {
-                basicSkillList.Add(skill_1);
-            }
-            for(int i=0; i<skill_2.skillCount; i++)
-            {
-                basicSkillList.Add(skill_2);
-            }
-            for(int i=0; i<skill_3.skillCount; i++)
-            {
-                basicSkillList.Add(skill_3);
-            }
-            */
-            foreach (var item in skillDic.Values) //skillDic에 저장되어있는 스킬갯수만큼
-            {
-                for (int i = 0; i < item.skillCount; i++)
-                {
-                    basicSkillList.Add(item); //실제 스킬List에 추가
-                }
+                case eSkillDamageType.Damage:
+                    //데미지 =  기본값 * 코인 앞면 나온횟수
+                    targetCharacter.TakeDamage(amount);
+                    break;
+                case eSkillDamageType.Heal:
+                    targetCharacter.Healing(amount);
+                    break;
             }
         }
     }
-    interface SkillInfo
-    {
-        string skillName { get; }
-        int power { get; }
-        int coinCount { get; }
-        eSkillType eCurSkillType { get; }
-        eSkillDamageType eCurSkillDamageType { get; }
-        int skillCount { get; }
-    }
-    abstract class SkillParent : SkillInfo
-    {
-        public string skillName { get; }
-        public int power { get; }
-        public int coinCount { get; }
-        public eSkillDamageType eCurSkillDamageType { get; }
-        public abstract eSkillType eCurSkillType { get; }
-        public abstract int skillCount { get; }
-        public SkillParent(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType)
-        {
-            skillName = _skillName;
-            power = _power;
-            coinCount = _coinCount;
-            eCurSkillDamageType = _eSkillDamageType;
-        }
-    }
-    class SkillOne : SkillParent
-    {
-        public override eSkillType eCurSkillType { get { return eSkillType.SkillOne; } }
-        public override int skillCount { get { return 3; } }
-        public SkillOne(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType)
-            : base(_skillName, _power, _coinCount, _eSkillDamageType)
-        {
-        }
-    }
-    class SkillTwo : SkillParent
-    {
-        public override eSkillType eCurSkillType { get { return eSkillType.SkillTwo; } }
-        public override int skillCount { get { return 2; } }
-        public SkillTwo(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType)
-            : base(_skillName, _power, _coinCount, _eSkillDamageType) { }
-    }
-    class SkillThree : SkillParent
-    {
-        public override eSkillType eCurSkillType { get { return eSkillType.SkillThree; } }
-        public override int skillCount { get { return 1; } }
-        public SkillThree(string _skillName, int _power, int _coinCount, eSkillDamageType _eSkillDamageType)
-            : base(_skillName, _power, _coinCount, _eSkillDamageType) { }
-    }
-
     class Program
     {
         static void BattleWindow()
@@ -359,6 +144,10 @@ namespace ConsoleLimbus
             Console.WriteLine("===================================================");
             while(true)
             {
+                int width = Console.BufferWidth;
+                int height = Console.BufferHeight;
+
+
                 Console.Clear();
                 Console.WriteLine("===================================================");
                 Console.WriteLine($"환영합니다 {player.Name}님");
@@ -388,6 +177,7 @@ namespace ConsoleLimbus
                         break;
                     case 5:
                         //전투
+                        ShowBattleWindow(player);
                         break;
                     default:
                         Console.WriteLine("1~5까지 입력해주세요");
@@ -396,6 +186,88 @@ namespace ConsoleLimbus
 
             }
         }
+        public static void ShowBattleWindow(Player player)
+        {
+            //▼스킬 초기설정
+            BattleSystem battle = new BattleSystem();
+            SkillInfo[] skillArray = new SkillInfo[2];
+            skillArray[0] = player.CharacterSkill.GetSkill(1); //스킬 슬롯 2개 채우기
+            skillArray[1] = player.CharacterSkill.GetSkill(1); //스킬 슬롯 2개 채우기
+            //▼적 초기설정 (무조건 공격만 하도록)
+            Character enemy1 = new Enemy("마히스", 30, 10);
+            SkillParent enemySkillOne = new SkillOne("사선베기", 3, 2, eSkillDamageType.Damage);
+            //▼전투
+            Console.WriteLine($"전투 입장! 사용할 스킬을 선택해 주세요.");
+            int turn = 1;
+            while (true)
+            {
+                Console.WriteLine($"======================{turn}번째 턴======================");
+                Console.WriteLine($"현재 나의 체력: {player.CurrentHp} / {player.MaxHp}");
+                Console.WriteLine($"현재 적의 체력: {enemy1.CurrentHp} / {enemy1.MaxHp}");
+                Console.WriteLine($"1번스킬: {skillArray[0].skillName} 2번스킬: {skillArray[1].skillName}");
+                turn++;
+
+                int skillIndex;
+                SkillInfo selectdSkill = null;
+                while (selectdSkill == null)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.Write("선택할 스킬: ");
+                    if (int.TryParse(Console.ReadLine(), out skillIndex))
+                    {
+
+                        if (skillIndex == 1 || skillIndex == 2)
+                        {
+                            selectdSkill = skillArray[skillIndex - 1]; //선택한 스킬 정보 저장
+                            skillArray[skillIndex - 1] = player.CharacterSkill.GetSkill(1); //스킬을 1개 더 빼서 저장해둠
+                        }
+                    }
+                }
+                Console.ResetColor();
+
+                //플레이어 스킬사용
+                //만약에 힐스킬이라면 합을 치면 안됨
+                int playerPower = 0;
+                int enemyPower = 0;
+                if (selectdSkill.eCurSkillDamageType == eSkillDamageType.Damage)
+                {
+                    playerPower = battle.GetSkillPower(player, enemy1, selectdSkill);
+                }
+                else if (selectdSkill.eCurSkillDamageType == eSkillDamageType.Heal)
+                {
+                    playerPower = battle.GetSkillPower(player, player, selectdSkill);
+                }
+
+                //적 스킬사용
+                enemyPower = battle.GetSkillPower(enemy1, player, enemySkillOne);
+
+                //합 시스템 (둘다 공격스킬일 경우 강한 스킬만 실행한다)
+                if(selectdSkill.eCurSkillDamageType == eSkillDamageType.Damage && enemySkillOne.eCurSkillDamageType == eSkillDamageType.Damage)
+                {
+                    //무승부일때는 무효라고 가정
+                    if (playerPower > enemyPower) battle.UseSkill(player, enemy1, selectdSkill, playerPower);
+                    else if (playerPower < enemyPower) battle.UseSkill(enemy1, player, enemySkillOne, enemyPower);
+                }
+                else
+                {   //힐일경우 합을 치지않고 그대로 진행
+                    battle.UseSkill(player, player, selectdSkill, playerPower);
+                    battle.UseSkill(enemy1, player, enemySkillOne, enemyPower);
+                }
+
+
+                if (enemy1.CurrentHp <= 0)
+                {
+                    Console.WriteLine("적을 처치했습니다!! 0을 입력시 메인메뉴로 돌아갑니다!");
+                    Console.WriteLine($"처치보상: 500 Gold, Level Up!");
+                    Console.WriteLine($"현재 플레이어 레벨 :{player.Level}, 소지금: {player.Money}");
+
+                    while (Console.ReadLine() != "0") { }
+                    return;
+                }
+            }
+            
+        }
+
         public static void ShowInventoryWindow(Player player)
         {
             while(true)
@@ -411,6 +283,7 @@ namespace ConsoleLimbus
         }
         public static void ShowGachaWindow(Player player)
         {
+            Console.Clear();
             Console.WriteLine("===================================================");
             Console.WriteLine("오늘의 운세는 어떠신가요? 상점보다 매우 저렴한 뽑기로 행운을 노려보세요!");
             Console.WriteLine($"몇회 뽑으시겠습니까? 1회 100 Gold 입니다! 소지금:{player.Money}");
@@ -420,7 +293,7 @@ namespace ConsoleLimbus
                 Gacha gacha = new Gacha();
                 List<Item> gachaItem = gacha.DoGacha((player as Player), count);
                 //Inventory inventory = new Inventory();
-                if (player is Player)
+                if (gachaItem != null)
                 {
                     (player as Player)?.AddInventoryItem(gachaItem);
                     (player as Player)?.PrintInventoryItem();
@@ -429,6 +302,11 @@ namespace ConsoleLimbus
                     {
                         if (Console.ReadLine() == "0") break;
                     }
+                }
+                else
+                {
+                    Console.WriteLine("금액부족으로 인해 3초후 메인화면 이동");
+                    Thread.Sleep(3000);
                 }
             }
         }
@@ -439,7 +317,6 @@ namespace ConsoleLimbus
             while(true)
             {
                 Console.Clear();
-                Console.WriteLine("===================================================");
                 player.Equipment.PrintEquipment();
                 Console.WriteLine("===================================================");
                 player.PrintInventoryItem();
@@ -465,6 +342,7 @@ namespace ConsoleLimbus
             Shop shop = new Shop();
             while(true)
             {
+                Console.Clear();
                 Console.WriteLine("===================================================");
                 Console.WriteLine($"상점에 오신걸 환영합니다!! 무엇을 원하시나요? 소지금: {player.Money}");
                 Console.WriteLine("1. 구매 2. 판매  0. 메인으로 돌아가기");
@@ -519,13 +397,11 @@ namespace ConsoleLimbus
             SkillManager sm = new SkillManager();
             sm.SetSkill(skills);
             var k = sm.GetSkill(1); //k를 얻어왔으니 k를 쓰면됨
-            BattleSystem battle = new BattleSystem();
+            
             Character player1 = new Player("히스클리프", 100, 5);
-            Character enemy1 = new Enemy("마히스", 30, 10);
             player1.SetPlayerSkills(sm);
 
-            var k2 = player1.CharacterSkill.GetSkill(1); //플레이어 입력으로 스킬슬롯1이나 스킬슬롯2를 Console.ReadLine()으로 선택
-            battle.UseSkill(player1, enemy1, k2);
+            
             //sm.SetBasicSkill();
 
             //##메뉴 시작.

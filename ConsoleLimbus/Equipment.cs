@@ -13,7 +13,6 @@ namespace ConsoleLimbus
         //장비 장착 창(인벤토리와 연동해서 어떤 장비를 가지고 있는지
         Dictionary<eItemType, Item> equipmentDic = new Dictionary<eItemType, Item>();
 
-
         public Equipment()
         {
             InitEquipmentDic(); //딕셔너리에 enum순서대로 정렬되어 추가되도록 초기값 생성
@@ -42,7 +41,6 @@ namespace ConsoleLimbus
                 Item itemBuf = equipmentDic[item];
                 Console.WriteLine($"{itemBuf.itemType}은 {itemBuf.itemGrade} 등급 {itemBuf.name}를 장착중입니다");
             }
-            Console.WriteLine("============================");
         }
     }
 }

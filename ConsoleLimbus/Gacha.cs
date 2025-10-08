@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ConsoleLimbus
@@ -96,7 +97,7 @@ namespace ConsoleLimbus
         //가챠 시작
         public List<Item> DoGacha(Player player, int count)
         {
-            int billAmount = count * 10;
+            int billAmount = count * 100;
             if(player.Money < billAmount)
             {
                 Console.WriteLine("금액이 부족합니다");
@@ -117,21 +118,21 @@ namespace ConsoleLimbus
                 ItemFactory itemFactory = new ItemFactory();
                 Item itemBuf = itemFactory.Create(itemTypeBuf, itemGradeBuf, itemFromPool.name, itemFromPool.value);
 
-                PrintGachaItem(itemGradeBuf, itemTypeBuf); //뽑은 아이템 출력
+                PrintGachaItem(itemBuf); //뽑은 아이템 출력
                 itemList.Add(itemBuf);
             }
-            Console.WriteLine($"======가챠 끝 {count * 1000} 원을 사용했습니다======");
+            Console.WriteLine($"======가챠 끝 {billAmount} 원을 사용했습니다======");
             player.SetMoney(-billAmount);
             return itemList;
         }
-        public void PrintGachaItem(eItemGrade itemGrade, eItemType itemType)
+        public void PrintGachaItem(Item _item)
         {
-            if (itemGrade == eItemGrade.C) Console.ForegroundColor = ConsoleColor.White;
-            else if (itemGrade == eItemGrade.B) Console.ForegroundColor = ConsoleColor.Blue;
-            else if (itemGrade == eItemGrade.A) Console.ForegroundColor = ConsoleColor.Magenta;
-            else if (itemGrade == eItemGrade.S) Console.ForegroundColor = ConsoleColor.Red;
-            else if (itemGrade == eItemGrade.SS) Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine($"{itemGrade}등급의 {itemType}을 뽑았습니다!!");
+            if (_item.itemGrade == eItemGrade.C) Console.ForegroundColor = ConsoleColor.White;
+            else if (_item.itemGrade == eItemGrade.B) Console.ForegroundColor = ConsoleColor.Blue;
+            else if (_item.itemGrade == eItemGrade.A) Console.ForegroundColor = ConsoleColor.Magenta;
+            else if (_item.itemGrade == eItemGrade.S) Console.ForegroundColor = ConsoleColor.Red;
+            else if (_item.itemGrade == eItemGrade.SS) Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine($"{_item.itemGrade}등급의 {_item.itemType}인 {_item.name}을 뽑았습니다!!");
             Console.ResetColor();
         } 
         public static eItemGrade GetWeightRandomGrade(Dictionary<eItemGrade,int> dic)
@@ -302,7 +303,7 @@ namespace ConsoleLimbus
 
             if(itemList.Count <= 0)
             {
-                Console.WriteLine("아무 아이템도 없습니다");
+                Console.WriteLine("인벤토리에 아무 아이템도 없습니다");
                 return;
             }
 
@@ -323,7 +324,9 @@ namespace ConsoleLimbus
                 dic[(item.itemGrade, item.itemType, item.name)]++;
             }
             //▼출력
+            Console.ForegroundColor = ConsoleColor.Green;
             Console.WriteLine("=====아이템을 등급,타입,갯수별로 출력=====");
+            Console.ResetColor();
             int index = 1;
             foreach(var item in dic)
             {
